@@ -8,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime
 import os
-import asyncio
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,16 +27,13 @@ from app.routes.property import router as property_router
 from app.routes.satellite import router as satellite_router
 from app.routes.alerts import router as alerts_router
 from app.services.auth import get_current_user, NeonAuthUser
-from app.services.alert_notifier import start_alert_monitoring
 import app.db_models
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
-    
-    asyncio.create_task(start_alert_monitoring())
-    
+
     yield
 
 

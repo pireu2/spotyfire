@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from pydantic import BaseModel
-from typing import Optional, List
+from pydantic import BaseModel, Field
+from typing import Optional, List, Dict, Any
 from datetime import datetime, date
 from uuid import UUID
 
@@ -11,6 +12,10 @@ from app.database import get_db
 from app.db_models import Property, Geometry, SatelliteAnalysis
 from app.services.auth import get_current_user_id
 from app.services.satellite import process_sar_damage
+from app.services.wildfire_inference import (
+    FireAnalysisError,
+    run_fire_segmentation_analysis,
+)
 from app.services.pdf_generator import generate_satellite_report_pdf
 
 router = APIRouter()
@@ -19,6 +24,18 @@ router = APIRouter()
 class AnalyzeRequest(BaseModel):
     incident_date: str
     cost_per_ha: Optional[float] = 5000
+
+
+class AnalyzeFireRequest(BaseModel):
+    property_id: UUID
+    incident_date: date
+    geometry: Dict[str, Any] = Field(..., description="GeoJSON Polygon/MultiPolygon or Feature")
+
+
+class AnalyzeFireResponse(BaseModel):
+    damaged_area_ha: float
+    damage_percent: float
+    burn_scars_geojson: Dict[str, Any]
 
 
 class AnalysisResponse(BaseModel):
@@ -38,6 +55,33 @@ class AnalysisResponse(BaseModel):
     ai_insights: Optional[str] = None
     fire_points: Optional[List[dict]] = None
     created_at: datetime
+
+
+@router.post("/satellite/analyze-fire", response_model=AnalyzeFireResponse)
+async def analyze_fire_burn_scars(
+    request: AnalyzeFireRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(Property).where(Property.id == request.property_id)
+    )
+    property_obj = result.scalar_one_or_none()
+
+    if not property_obj:
+        raise HTTPException(status_code=404, detail="Property not found")
+
+    try:
+        inference_result = await run_in_threadpool(
+            run_fire_segmentation_analysis,
+            request.geometry,
+            request.incident_date.isoformat(),
+        )
+    except FireAnalysisError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Fire analysis failed: {str(exc)}") from exc
+
+    return AnalyzeFireResponse(**inference_result)
 
 
 class AnalysisListItem(BaseModel):
