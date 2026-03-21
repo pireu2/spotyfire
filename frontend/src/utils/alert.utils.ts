@@ -1,11 +1,14 @@
 import { Alert } from "@/types";
 
 export function compareAlertLists(prev: Alert[], next: Alert[]): boolean {
-  const prevIds = prev
+  const safePrev = Array.isArray(prev) ? prev : [];
+  const safeNext = Array.isArray(next) ? next : [];
+
+  const prevIds = safePrev
     .map((a) => a.id)
     .sort()
     .join(",");
-  const nextIds = next
+  const nextIds = safeNext
     .map((a) => a.id)
     .sort()
     .join(",");

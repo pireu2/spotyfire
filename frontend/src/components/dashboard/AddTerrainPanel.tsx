@@ -12,7 +12,7 @@ import {
   Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CreatePropertyRequest, Property } from "@/types";
+import { CreatePropertyRequest, PackageType, Property } from "@/types";
 import { createProperty, API_URL } from "@/lib/api";
 import { useUser } from "@stackframe/stack";
 import dynamic from "next/dynamic";
@@ -22,7 +22,7 @@ interface PolygonDrawMapProps {
   onPolygonChange: (
     coordinates: { lat: number; lng: number }[],
     area: number,
-    center: { lat: number; lng: number } | null
+    center: { lat: number; lng: number } | null,
   ) => void;
   initialPolygon?: { lat: number; lng: number }[];
   existingPolygons?: { coordinates: any; name: string }[];
@@ -37,7 +37,7 @@ const PolygonDrawMap = dynamic<PolygonDrawMapProps>(
         <Loader2 className="h-8 w-8 animate-spin text-green-500" />
       </div>
     ),
-  }
+  },
 );
 
 interface CadastralData {
@@ -106,7 +106,7 @@ export default function AddTerrainPanel({
 
   const [numarCadastral, setNumarCadastral] = useState("");
   const [cadastralData, setCadastralData] = useState<CadastralData | null>(
-    null
+    null,
   );
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState("");
@@ -119,7 +119,7 @@ export default function AddTerrainPanel({
   >([]);
   const [area, setArea] = useState(0);
   const [center, setCenter] = useState<{ lat: number; lng: number } | null>(
-    null
+    null,
   );
 
   const pricePerHa = CROP_PRICES[cropType] || 1000;
@@ -159,9 +159,19 @@ export default function AddTerrainPanel({
   const handlePaymentSuccess = async (pkg: string, reports: number) => {
     if (!pendingRequestData) return;
 
+    if (
+      pkg !== "Basic" &&
+      pkg !== "Pro" &&
+      pkg !== "Enterprise" &&
+      pkg !== "Per Raport"
+    ) {
+      setError("Pachet invalid selectat");
+      return;
+    }
+
     const updatedRequestData = {
       ...pendingRequestData,
-      activePackage: pkg,
+      activePackage: pkg as PackageType,
       reportsLeft: reports,
     };
 
@@ -170,18 +180,26 @@ export default function AddTerrainPanel({
       const accessToken = await user
         ?.getAuthJson()
         .then((auth) => auth?.accessToken);
-      const createdProperty = await createProperty(updatedRequestData, accessToken || undefined);
-      
+      const createdProperty = await createProperty(
+        updatedRequestData,
+        accessToken || undefined,
+      );
+
       // Save subscription info to localStorage since backend may not persist it
       if (createdProperty?.id) {
-        const subscriptionData = JSON.parse(localStorage.getItem('propertySubscriptions') || '{}');
+        const subscriptionData = JSON.parse(
+          localStorage.getItem("propertySubscriptions") || "{}",
+        );
         subscriptionData[createdProperty.id] = {
           activePackage: pkg,
           reportsLeft: reports,
         };
-        localStorage.setItem('propertySubscriptions', JSON.stringify(subscriptionData));
+        localStorage.setItem(
+          "propertySubscriptions",
+          JSON.stringify(subscriptionData),
+        );
       }
-      
+
       onSuccess();
       setShowPricingModal(false);
       setPendingRequestData(null);
@@ -196,7 +214,7 @@ export default function AddTerrainPanel({
   const handlePolygonChange = (
     coords: { lat: number; lng: number }[],
     calculatedArea: number,
-    calculatedCenter: { lat: number; lng: number } | null
+    calculatedCenter: { lat: number; lng: number } | null,
   ) => {
     setCoordinates(coords);
     setArea(calculatedArea);
@@ -217,10 +235,10 @@ export default function AddTerrainPanel({
       setLoadingProgress((prev) => {
         const newProgress = Math.min(prev + 2, 95);
         const messageIndex = Math.floor(
-          (newProgress / 100) * LOADING_MESSAGES.length
+          (newProgress / 100) * LOADING_MESSAGES.length,
         );
         setLoadingMessage(
-          LOADING_MESSAGES[Math.min(messageIndex, LOADING_MESSAGES.length - 1)]
+          LOADING_MESSAGES[Math.min(messageIndex, LOADING_MESSAGES.length - 1)],
         );
         return newProgress;
       });
@@ -240,7 +258,7 @@ export default function AddTerrainPanel({
             ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
           },
           body: JSON.stringify({ numar_cadastral: numarCadastral }),
-        }
+        },
       );
 
       clearInterval(progressInterval);
@@ -265,7 +283,7 @@ export default function AddTerrainPanel({
     } catch (err) {
       clearInterval(progressInterval);
       setError(
-        err instanceof Error ? err.message : "Eroare la preluarea datelor"
+        err instanceof Error ? err.message : "Eroare la preluarea datelor",
       );
     } finally {
       setIsLoading(false);
@@ -293,7 +311,7 @@ export default function AddTerrainPanel({
 
     if (inputMode === "draw" && coordinates.length < 3) {
       setError(
-        "Selectează cel puțin 3 puncte pe hartă pentru a forma un poligon"
+        "Selectează cel puțin 3 puncte pe hartă pentru a forma un poligon",
       );
       return;
     }
@@ -322,7 +340,7 @@ export default function AddTerrainPanel({
         center_lat: cadastralData.center_lat,
         center_lng: cadastralData.center_lng,
         estimated_value: estimatedValue,
-        activePackage: "",
+        activePackage: "Per Raport",
         reportsLeft: 0,
       };
     } else {
@@ -345,7 +363,7 @@ export default function AddTerrainPanel({
         center_lat: center.lat,
         center_lng: center.lng,
         estimated_value: estimatedValue,
-        activePackage: "",
+        activePackage: "Per Raport",
         reportsLeft: 0,
       };
     }
@@ -381,10 +399,11 @@ export default function AddTerrainPanel({
               setArea(0);
               setCenter(null);
             }}
-            className={`flex-1 px-3 py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${inputMode === "cadastral"
-              ? "text-green-500 border-b-2 border-green-500 bg-green-500/10"
-              : "text-slate-400 hover:text-white hover:bg-slate-700/50"
-              }`}
+            className={`flex-1 px-3 py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${
+              inputMode === "cadastral"
+                ? "text-green-500 border-b-2 border-green-500 bg-green-500/10"
+                : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+            }`}
           >
             <Building2 className="h-3.5 w-3.5" />
             Nr. Cadastral
@@ -396,10 +415,11 @@ export default function AddTerrainPanel({
               setError(null);
               resetCadastral();
             }}
-            className={`flex-1 px-3 py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${inputMode === "draw"
-              ? "text-green-500 border-b-2 border-green-500 bg-green-500/10"
-              : "text-slate-400 hover:text-white hover:bg-slate-700/50"
-              }`}
+            className={`flex-1 px-3 py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${
+              inputMode === "draw"
+                ? "text-green-500 border-b-2 border-green-500 bg-green-500/10"
+                : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+            }`}
           >
             <MapPin className="h-3.5 w-3.5" />
             Desenare Hartă
@@ -549,8 +569,7 @@ export default function AddTerrainPanel({
 
               <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-400">Suprafață Calculată</span>
-                <span className="text-white font-medium">
-                </span>
+                <span className="text-white font-medium"></span>
               </div>
             </div>
           )}

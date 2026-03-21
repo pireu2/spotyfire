@@ -13,6 +13,7 @@ import {
 import { Leaf, TrendingUp, TrendingDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { NDVIDataPoint } from "@/types";
+import { Formatter } from "@/utils/formatter";
 
 interface HealthStatsProps {
   data: NDVIDataPoint[];
@@ -22,16 +23,17 @@ interface HealthStatsProps {
 function HealthStats({ data, currentNDVI }: HealthStatsProps) {
   const previousNDVI = data[data.length - 2]?.value || currentNDVI;
   const trend = currentNDVI - previousNDVI;
-  const trendPercent = ((trend / previousNDVI) * 100).toFixed(1);
+  const trendPercent =
+    previousNDVI > 0 ? ((trend / previousNDVI) * 100).toFixed(1) : "0";
 
-  const getHealthLabel = (value: number) => {
-    if (value >= 0.7) return { text: "Excelent", color: "text-green-500" };
-    if (value >= 0.5) return { text: "Bun", color: "text-green-400" };
-    if (value >= 0.3) return { text: "Moderat", color: "text-yellow-500" };
-    return { text: "Critic", color: "text-red-500" };
+  const health = {
+    text: Formatter.getNDVIHealthLabel(currentNDVI),
+    color: Formatter.getNDVIHealthColor(currentNDVI),
   };
 
-  const health = getHealthLabel(currentNDVI);
+  const minValue = Math.min(...data.map((d) => d.value));
+  const maxValue = Math.max(...data.map((d) => d.value));
+  const avgValue = data.reduce((sum, d) => sum + d.value, 0) / data.length;
 
   return (
     <Card className="bg-slate-800/80 backdrop-blur border-slate-700">
@@ -45,14 +47,12 @@ function HealthStats({ data, currentNDVI }: HealthStatsProps) {
         <div className="flex items-center justify-between mb-4">
           <div>
             <p className="text-3xl font-bold text-white">
-              {currentNDVI.toFixed(2)}
+              {Formatter.formatNDVI(currentNDVI)}
             </p>
             <p className={`text-sm ${health.color}`}>{health.text}</p>
           </div>
           <div
-            className={`flex items-center gap-1 ${
-              trend >= 0 ? "text-green-500" : "text-red-500"
-            }`}
+            className={`flex items-center gap-1 ${trend >= 0 ? "text-green-500" : "text-red-500"}`}
           >
             {trend >= 0 ? (
               <TrendingUp className="h-4 w-4" />
@@ -95,21 +95,19 @@ function HealthStats({ data, currentNDVI }: HealthStatsProps) {
           <div className="bg-slate-700/50 rounded-lg p-2">
             <p className="text-xs text-slate-400">Min</p>
             <p className="text-sm font-semibold text-white">
-              {Math.min(...data.map((d) => d.value)).toFixed(2)}
+              {Formatter.formatNDVI(minValue)}
             </p>
           </div>
           <div className="bg-slate-700/50 rounded-lg p-2">
-            <p className="text-xs text-slate-400">Medie</p>
+            <p className="text-xs text-slate-400">Media</p>
             <p className="text-sm font-semibold text-white">
-              {(
-                data.reduce((acc, d) => acc + d.value, 0) / data.length
-              ).toFixed(2)}
+              {Formatter.formatNDVI(avgValue)}
             </p>
           </div>
           <div className="bg-slate-700/50 rounded-lg p-2">
             <p className="text-xs text-slate-400">Max</p>
             <p className="text-sm font-semibold text-white">
-              {Math.max(...data.map((d) => d.value)).toFixed(2)}
+              {Formatter.formatNDVI(maxValue)}
             </p>
           </div>
         </div>

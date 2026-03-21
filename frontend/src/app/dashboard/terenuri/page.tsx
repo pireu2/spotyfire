@@ -13,7 +13,7 @@ import {
   SquareIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Property } from "@/types";
+import { PackageType, Property } from "@/types";
 import { getProperties, deleteProperty } from "@/lib/api";
 import { useUser } from "@stackframe/stack";
 import AddTerrainPanel from "@/components/dashboard/AddTerrainPanel";
@@ -53,6 +53,15 @@ const getCropLabel = (cropType: string) => {
 
 import DeleteConfirmationModal from "@/components/dashboard/DeleteConfirmationModal";
 
+const isPackageType = (value: string): value is PackageType => {
+  return (
+    value === "Basic" ||
+    value === "Pro" ||
+    value === "Enterprise" ||
+    value === "Per Raport"
+  );
+};
+
 export default function TerenuriPage() {
   const user = useUser();
   const [properties, setProperties] = useState<Property[]>([]);
@@ -61,15 +70,18 @@ export default function TerenuriPage() {
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [showRenewModal, setShowRenewModal] = useState(false);
   const [renewProperty, setRenewProperty] = useState<Property | null>(null);
-  
+
   // New state for delete confirmation
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [propertyToDelete, setPropertyToDelete] = useState<Property | null>(null);
+  const [propertyToDelete, setPropertyToDelete] = useState<Property | null>(
+    null,
+  );
 
-  const PACKAGE_REPORTS: Record<string, number> = {
+  const PACKAGE_REPORTS: Record<PackageType, number> = {
     Basic: 5,
     Pro: 15,
     Enterprise: 30,
+    "Per Raport": 0,
   };
 
   const fetchProperties = async () => {
@@ -79,16 +91,25 @@ export default function TerenuriPage() {
         ?.getAuthJson()
         .then((auth) => auth?.accessToken);
       const data = await getProperties(accessToken || undefined);
-      
+
       // Get locally stored subscription info (since backend may not persist it)
-      const savedSubscriptions = JSON.parse(localStorage.getItem('propertySubscriptions') || '{}');
-      
+      const savedSubscriptions = JSON.parse(
+        localStorage.getItem("propertySubscriptions") || "{}",
+      );
+
       // Merge API data with localStorage subscription info
       const propertiesWithReports = data.map((p) => {
         const savedSub = savedSubscriptions[p.id];
-        const activePackage = savedSub?.activePackage || p.activePackage || 'Basic';
-        const reportsLeft = savedSub?.reportsLeft ?? p.reportsLeft ?? PACKAGE_REPORTS[activePackage] ?? 5;
-        
+        const savedPackage = savedSub?.activePackage;
+        const activePackage: PackageType = isPackageType(savedPackage)
+          ? savedPackage
+          : p.activePackage || "Basic";
+        const reportsLeft =
+          savedSub?.reportsLeft ??
+          p.reportsLeft ??
+          PACKAGE_REPORTS[activePackage] ??
+          5;
+
         return {
           ...p,
           activePackage,
@@ -140,22 +161,32 @@ export default function TerenuriPage() {
 
   const handleRenewSuccess = (pkg: string, reports: number) => {
     if (!renewProperty) return;
-    
+
+    if (!isPackageType(pkg)) {
+      console.error("Invalid package type:", pkg);
+      return;
+    }
+
     // Save to localStorage
-    const subscriptionData = JSON.parse(localStorage.getItem('propertySubscriptions') || '{}');
+    const subscriptionData = JSON.parse(
+      localStorage.getItem("propertySubscriptions") || "{}",
+    );
     subscriptionData[renewProperty.id] = {
       activePackage: pkg,
       reportsLeft: reports,
     };
-    localStorage.setItem('propertySubscriptions', JSON.stringify(subscriptionData));
-    
+    localStorage.setItem(
+      "propertySubscriptions",
+      JSON.stringify(subscriptionData),
+    );
+
     // Update the property with new package and reports
     setProperties((prev) =>
       prev.map((p) =>
         p.id === renewProperty.id
           ? { ...p, activePackage: pkg, reportsLeft: reports }
-          : p
-      )
+          : p,
+      ),
     );
     setShowRenewModal(false);
     setRenewProperty(null);

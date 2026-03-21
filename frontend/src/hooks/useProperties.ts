@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Property, LandParcel } from "@/types";
-import { ApiService } from "@/services/api.service";
+import { PropertyService } from "@/services/propertyService";
 import { propertiesToParcels } from "@/utils/property.utils";
 
 export function useProperties(userId?: string, accessToken?: string) {
@@ -10,13 +10,19 @@ export function useProperties(userId?: string, accessToken?: string) {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !accessToken) {
+      setProperties([]);
+      setParcels([]);
+      setError(null);
+      setIsLoading(false);
+      return;
+    }
 
     const fetchProperties = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const data = await ApiService.getProperties(accessToken);
+        const data = await PropertyService.getAll(accessToken);
         setProperties(data);
         setParcels(propertiesToParcels(data));
       } catch (err) {

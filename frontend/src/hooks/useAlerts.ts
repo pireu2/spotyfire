@@ -1,16 +1,27 @@
 import { useState, useEffect, useCallback } from "react";
 import { Alert } from "@/types";
-import { ApiService } from "@/services/api.service";
+import { AlertService } from "@/services/alertService";
 import { compareAlertLists } from "@/utils/alert.utils";
 
-export function useAlerts(pollingInterval: number = 30000) {
+export function useAlerts(
+  accessToken?: string,
+  pollingInterval: number = 30000,
+) {
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(Boolean(accessToken));
   const [error, setError] = useState<Error | null>(null);
 
   const fetchAlerts = useCallback(async () => {
+    if (!accessToken) {
+      setAlerts([]);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+
     try {
-      const newAlerts = await ApiService.getAlerts();
+      setError(null);
+      const newAlerts = await AlertService.getAll(accessToken);
 
       setAlerts((prevAlerts) => {
         if (compareAlertLists(prevAlerts, newAlerts)) {
@@ -25,13 +36,19 @@ export function useAlerts(pollingInterval: number = 30000) {
       console.error("Failed to fetch alerts:", err);
       setIsLoading(false);
     }
-  }, []);
+  }, [accessToken]);
 
   useEffect(() => {
+    if (!accessToken) {
+      setAlerts([]);
+      setIsLoading(false);
+      return;
+    }
+
     fetchAlerts();
     const interval = setInterval(fetchAlerts, pollingInterval);
     return () => clearInterval(interval);
-  }, [fetchAlerts, pollingInterval]);
+  }, [accessToken, fetchAlerts, pollingInterval]);
 
   return { alerts, isLoading, error, refetch: fetchAlerts };
 }

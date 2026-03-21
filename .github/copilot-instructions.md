@@ -1,218 +1,105 @@
-# SpotyFire - Backend Master Prompt & Hackathon Guidelines
+# SpotyFire Copilot Instructions
 
-## 1\. Project Overview
+This file defines the active coding rules for this repository.
+Keep instructions concise, practical, and aligned with the current codebase.
 
-**Name:** SpotyFire (Backend)
-**Context:** 48h Hackathon - "Disaster Responses & Resilience"
-**Goal:** A high-speed FastAPI backend that processes satellite imagery (Sentinel-1 SAR) to detect floods/fires, estimates financial loss, and generates valid insurance claim PDFs using AI.
-**Core Functionality:**
+## 0) Project Snapshot
 
-1.  **Satellite Analysis:** Fetch "Before" vs "After" radar images to calculate damage percentage.
-2.  **AI Adjuster:** An LLM agent that interprets the satellite data and drafts a legal "Notice of Loss."
-3.  **Report Generation:** Create a downloadable PDF for the insurance company.
+- SpotyFire is a disaster-response platform for agricultural land monitoring.
+- Frontend (Next.js + TypeScript) provides dashboard, alerts, reports, maps, and subscription flows.
+- Backend (FastAPI) provides auth-protected APIs for properties, alerts, reports, AI assistant, and analysis.
+- Priority outcomes: stable demo behavior, reliable data flow, and maintainable code.
 
-## 2\. Tech Stack (Python)
+## 1) General Priorities
 
-- **Framework:** `FastAPI` (for speed and auto-docs).
-- **Server:** `Uvicorn`.
-- **Auth** neon auth
-- **Satellite Data:**`earthengine-api`.
-- **Image Processing:** `rasterio`(for calculating difference masks).
-- **AI/LLM:** `google-generativeai` (Gemini-2.0-flash).
-- **PDF Generation:** `fpdf2` or `reportlab`.
-- **Environment:** `python-dotenv` for API keys.
+- Preserve existing behavior unless a change request explicitly asks for behavior changes.
+- Prefer readability and maintainability over clever code.
+- Keep changes minimal and scoped to the task.
+- Validate with TypeScript/build checks after structural changes.
 
-## 3\. Architecture & Principles
+## 2) Frontend Architecture (Current)
 
-### A. The "Demo Mode" Strategy (CRITICAL)
+### UI Styling Direction
 
-- **Rule:** We cannot risk the Satellite API timing out during the live pitch.
-- **Implementation:** Create a global constant `DEMO_MODE = True`.
-- **Logic:**
-  - If `DEMO_MODE` is True: The `/analyze` endpoint ignores the specific coordinates and returns a **pre-calculated** perfect JSON response for the Galați/Vaslui flood event.
-  - If `DEMO_MODE` is False: It actually tries to call the Sentinel Hub API.
-- **Rule**: Do not write any comments
+- Maintain current eco-defense visual direction.
+- Primary emphasis: green accents with slate-based surfaces and clear status colors.
+- Keep styling consistent with existing Tailwind utility patterns and shadcn components.
+- Preserve responsive behavior for desktop and mobile.
+- Avoid ad-hoc style one-offs when a shared component/utility pattern already exists.
 
-### B. Directory Structure
+### Service Naming
 
-```text
-backend/
-├── app/
-│   ├── main.py            # FastAPI entry point & CORS
-│   ├── models.py          # Pydantic models (Request/Response schemas)
-│   ├── services/
-│   │   ├── satellite.py   # logic for fetching & diffing images
-│   │   ├── ai_agent.py    # OpenAI prompt engineering
-│   │   └── pdf_maker.py   # FPDF logic to generate the claim
-│   └── data/
-│       └── mocks.py       # The hardcoded "Perfect Demo" data
-├── static/                # Store generated overlay images here
-├── requirements.txt
-└── .env
-```
+- Service files must use `NameService.ts` naming.
+- Canonical service files:
+  - `src/services/apiService.ts`
+  - `src/services/propertyService.ts`
+  - `src/services/alertService.ts`
+  - `src/services/reportService.ts`
+  - `src/services/subscriptionService.ts`
+- Never reintroduce legacy `name.service.ts` files.
 
-## 4\. Key Endpoints & Logic
+### Responsibility Split
 
-### 1\. `POST /api/analyze`
+- `ApiService` is transport-only:
+  - generic HTTP methods
+  - auth/header wiring
+  - centralized response/error handling
+- Entity-specific logic stays in entity services:
+  - endpoint-specific methods
+  - payload normalization
+  - entity helpers
+- Hooks and components must not implement transport logic directly.
 
-- **Input:** `{ lat: float, lng: float, crop_type: string, value_per_ha: float }`
-- **Process:**
-  1.  Check `DEMO_MODE`. If True, return mock data.
-  2.  If False: Fetch Sentinel-1 image (2 weeks ago) and Sentinel-1 image (yesterday).
-  3.  Calculate pixel difference (change detection).
-  4.  Determine `damaged_area_ha` and `financial_loss`.
-- **Output:** JSON with damage stats and a URL to the "Flood Mask" image.
+### Hook and Auth Rules
 
-### 2\. `POST /api/chat`
+- Protected requests must wait for auth readiness.
+- Do not call protected endpoints without `accessToken`.
+- For unauthenticated state, hooks should:
+  - avoid network calls
+  - clear stale data when needed
+  - set loading/error state deterministically
 
-- **Input:** `{ message: string, context: dict }`
-- **Process:**
-  - System Prompt: _"You are an expert Agricultural Claims Adjuster named SpotyBot. You have access to satellite forensic data showing {damage_percent}% damage. Be empathetic but professional. Help the farmer draft their claim."_
-  - Use RAG (Retrieval Augmented Generation) to answer questions about the specific damage.
+### Data Safety
 
-### 3\. `POST /api/generate-report`
+- Never trust API payload shape blindly.
+- Normalize payloads in the service layer before they reach hooks/components.
+- Guard array operations (`map`, `filter`, `reduce`) with array checks.
 
-- **Input:** `{ claim_id: string, user_details: dict }`
-- **Process:**
-  - Generate a formal PDF named `Claim_{ID}.pdf`.
-  - Include: Map screenshot (placeholder), damage stats, estimated payout, time of disaster.
-- **Output:** Download URL.
+## 3) TypeScript Rules
 
-## 5\. Specific Service Instructions
+- Keep strict typing across services, hooks, contexts, and components.
+- Use domain types from `src/types/index.ts`.
+- Respect union types (`PackageType`, `ReportStatus`, etc.) and narrow before assignment.
+- Mock data must satisfy interfaces fully.
 
-### Satellite Service (`satellite.py`)
+## 4) Import and Path Conventions
 
-- Focus on **Sentinel-1 GRD** (Ground Range Detected).
-- Logic: Water looks _dark_ in radar (low backscatter). If a pixel was bright (land) and is now dark (water), it is flooded.
-- **Hackathon Shortcut:** If real processing is too hard, just return a static image of a red blob on a transparent background.
+- Use `@/` absolute imports for cross-folder references.
+- Keep imports aligned with current service filenames.
+- Remove stale imports and unused symbols.
 
-### AI Agent (`ai_agent.py`)
+## 5) Clean Code Standards
 
-- Do not just stream text. Structure the output.
-- If the user asks "How much money will I get?", the AI should calculate: `damaged_ha * value_per_ha`.
+- Prefer small, focused components and functions.
+- Keep business logic in services/utilities, not in UI components.
+- Extract repeated logic into reusable utilities/services.
+- No dead code, no temporary commented blocks, no stale TODO placeholders.
+- Keep naming explicit and consistent with existing patterns.
 
-## 6\. Response Format
+## 6) Refactor Safety
 
-- **Modular Code:** Give me one file at a time.
-- **Mock First:** Start by writing `app/data/mocks.py` so we have data to test immediately.
-- **Pydantic Models:** Define the data structure in `app/models.py` before writing the logic.
-- **FastAPI Boilerplate:** Write the `main.py` last, connecting the services.
+- When renaming/moving files, update all imports in the same change.
+- Do not mix legacy and current architectural styles in one feature.
+- Maintain internal consistency with existing hooks/services patterns.
 
----
+## 7) Backend Guardrails (Minimal)
 
-# SpotyFire - Frontend Master Prompt & Hackathon Guidelines
+- Keep backend code modular (`routes`, `services`, `models`).
+- Preserve API contracts used by the frontend unless explicitly requested.
+- Prefer deterministic behavior for demo-critical paths.
 
-## 1\. Project Overview
+## 8) Output Quality Expectations
 
-**Name:** SpotyFire
-**Context:** 48h Hackathon - "Disaster Responses & Resilience: The Web As a Lifeline"
-**Goal:** A web platform for farmers and landowners to detect wildfires and floods using satellite imagery, analyze vegetation health, and automate insurance claims via AI.
-**Target Audience:**
-
-1.  **Farmers/Landowners:** Need to monitor crop health and claim losses fast.
-2.  **Insurers:** Need verification of damage.
-3.  **Emergency Responders:** Need to spot fire/flood spread patterns.
-
-**Key Values:** Detection, Growth, Resilience, Speed.
-
-## 2\. Tech Stack (Speed & Performance)
-
-- **Framework:** Next.js 16+ (App Router).
-- **Language:** TypeScript.
-- **Styling:** Tailwind CSS v4.
-- **Auth** neon auth
-- **UI Library:** shadcn/ui (Radix UI primitives).
-- **Maps:** `react-leaflet` (OpenStreetMap) with `leaflet` CSS.
-- **Charts:** `recharts` (for displaying fertility index/NDVI trends).
-- **Icons:** Lucide React.
-- **AI Interface:** AI backend.
-- **State:** React Context.
-
-## 3\. Design & UX Guidelines
-
-- **Style:** **"Eco-Defense" Aesthetic.** Clean, modern, high-tech but grounded.
-- **Main Color:** **Green** (Growth, Nature, Recovery).
-- **Color Palette:**
-  - **Primary (Brand):** Emerald Green (`green-600` / `#059669`).
-  - **Secondary (UI):** Slate Gray (`slate-900` for text, `slate-50` for backgrounds).
-  - **Status - Healthy:** Bright Green (`green-500`).
-  - **Status - Fire:** Blazing Orange/Red (`orange-600`).
-  - **Status - Flood:** Deep Blue (`blue-600`).
-- **Key Visuals:**
-  - **The Map:** The central component.
-  - **The Dashboard:** Glassmorphism over the map or clean cards floating on top.
-  - **Typography:** Sans-serif, crisp (Inter or Geist Sans).
-
-## 4\. Coding Principles (Hackathon Mode)
-
-### B. Component Architecture
-
-- **Components:** Preffer server side components.
-- **Modular:** Each feature should be a separate component.
-- **Client-Side Strategy:** Mark map interactions and charts as `'use client'`.
-- **Responsive:** Must look good on a laptop (for the demo projector). Mobile is good to have.
-- **Map Isolation:** Always isolate `react-leaflet` components in a separate file using `next/dynamic` with `ssr: false` to avoid window errors.
-
-### C. The "Lifeline" & "Validation" Features
-
-- **Pre-Validated Report:** Create a UI component that looks like a generated PDF "Certificate of Loss".
-- **Connectivity Status:** A visual indicator (Green dot) showing "Satellite Uplink Active" vs "Offline Mode - SMS Fallback Ready".
-
-## 5\. Project Structure
-
-```
-src/
-├── app/
-│   ├── layout.tsx         # Root layout (Inter font)
-│   ├── page.tsx           # Landing Page (Pitch the "SpotyFire" vision)
-│   └── dashboard/
-│       ├── layout.tsx     # Sidebar (Green accents) + Header
-│       └── page.tsx       # The Main Map View
-├── components/
-│   ├── dashboard/
-│   │   ├── HealthStats.tsx # NDVI/Vegetation gauges
-│   │   ├── AiAssistant.tsx # The Chatbot drawer
-│   │   ├── AlertsPanel.tsx # "Fire Detected in Sector 4"
-│   │   └── ClaimsCard.tsx  # "Generate Report" button
-│   ├── map/
-│   │   ├── MapCanvas.tsx   # Leaflet Container (NoSSR)
-│   │   └── MapLayers.tsx   # Toggles for "Natural Color" vs "Radar"
-│   ├── ui/                 # shadcn components (Buttons, Cards)
-│   └── landing/            # Hero section
-├── lib/
-│   ├── utils.ts
-│   └── mocks.ts            # MOCK DATA STORE
-└── types/
-    └── index.ts
-```
-
-## 6\. Specific Component Instructions
-
-### The Map (Heart of SpotyFire)
-
-- Show user's land with a **Green outline** (healthy).
-- If a disaster mode is toggled, overlay **Red polygons** (Fire) or **Blue polygons** (Flood).
-- Popup on click: "Vegetation Index: 0.85 (High)" or "Damage Est: $4,500".
-
-### The AI Assistant
-
-- Name: "SpotyBot" or "Field Agent".
-- Context: It knows the map data.
-- Suggested prompts: "Analyze burn scar size", "Draft claim for Allianz", "Compare to last year".
-
-### The Landing Page
-
-- Hero Section: Big bold text "Protecting Your Land from Space."
-- Call to Action: Green button "Launch Dashboard".
-
-## 7\. Response Format
-
-- **Code First:** Provide the component code immediately.
-- **Imports:** Include all imports (lucide-react, etc.).
-- **Styling:** Use Tailwind classes directly (`className="bg-green-600 text-white..."`).
-- **No Comments:** Keep code clean, no comments needed.
-- **No Explanations:** Just the code, little explanations or markdown formatting.
-
----
-
-**MASTER PROMPT END**
+- Deliver production-quality code by default.
+- Keep responses and code edits concise.
+- Avoid unnecessary explanations in code files.
