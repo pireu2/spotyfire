@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -45,7 +46,7 @@ const getNDVILabel = (value: number) => {
   return "Scăzut";
 };
 
-export default function MapCanvas({
+function MapCanvas({
   parcels,
   alerts = [],
   activeLayer = "standard",
@@ -334,3 +335,5 @@ export default function MapCanvas({
     </MapContainer>
   );
 }
+
+export default memo(MapCanvas);

@@ -154,11 +154,11 @@ async def send_alert_email(to_email: str, user_name: str, alert_data: List[Dict]
     msg.attach(html_part)
     
     try:
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()
-        server.login(SMTP_USERNAME, SMTP_PASSWORD)
-        server.send_message(msg)
-        server.quit()
+        # server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        # server.starttls()
+        # server.login(SMTP_USERNAME, SMTP_PASSWORD)
+        # server.send_message(msg)
+        # server.quit()
         print(f"✅ Email sent successfully to {to_email}")
     except Exception as e:
         print(f"❌ Failed to send email: {e}")

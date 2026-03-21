@@ -1,7 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { AlertTriangle, Flame, Droplets, Clock, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { useState, useEffect, memo } from "react";
+import {
+  AlertTriangle,
+  Flame,
+  Droplets,
+  Clock,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/types";
@@ -48,7 +56,7 @@ const LOADING_MESSAGES = [
   "Se finalizează raportul de alerte...",
 ];
 
-export default function AlertsPanel({ alerts }: AlertsPanelProps) {
+function AlertsPanel({ alerts }: AlertsPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -68,8 +76,12 @@ export default function AlertsPanel({ alerts }: AlertsPanelProps) {
         setIsLoading(false);
       } else {
         setLoadingProgress(Math.min(progress, 100));
-        const messageIndex = Math.floor((progress / 100) * LOADING_MESSAGES.length);
-        setLoadingMessage(LOADING_MESSAGES[Math.min(messageIndex, LOADING_MESSAGES.length - 1)]);
+        const messageIndex = Math.floor(
+          (progress / 100) * LOADING_MESSAGES.length,
+        );
+        setLoadingMessage(
+          LOADING_MESSAGES[Math.min(messageIndex, LOADING_MESSAGES.length - 1)],
+        );
       }
     }, intervalTime);
 
@@ -78,7 +90,7 @@ export default function AlertsPanel({ alerts }: AlertsPanelProps) {
 
   // Sort alerts by date descending (newest first)
   const sortedAlerts = [...alerts].sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
   );
 
   const displayedAlerts = sortedAlerts.slice(0, 3);
@@ -123,8 +135,9 @@ export default function AlertsPanel({ alerts }: AlertsPanelProps) {
             ))}
 
             <div
-              className={`space-y-2 overflow-hidden transition-all duration-500 ease-in-out ${isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
-                }`}
+              className={`space-y-2 overflow-hidden transition-all duration-500 ease-in-out ${
+                isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
+              }`}
             >
               {hiddenAlerts.map((alert) => (
                 <AlertItem key={alert.id} alert={alert} />
@@ -169,7 +182,7 @@ function AlertItem({ alert }: { alert: Alert }) {
   return (
     <div
       className={`border-l-4 rounded-r-lg p-3 ${getSeverityColor(
-        alert.severity
+        alert.severity,
       )}`}
     >
       <div className="flex items-start gap-2">
@@ -191,3 +204,5 @@ function AlertItem({ alert }: { alert: Alert }) {
     </div>
   );
 }
+
+export default memo(AlertsPanel);

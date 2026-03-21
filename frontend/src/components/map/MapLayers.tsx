@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Layers, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -15,7 +15,7 @@ const layers = [
   { id: "terrain", name: "Relief", icon: Layers },
 ];
 
-export default function MapLayers({ activeLayer, onLayerChange }: MapLayersProps) {
+function MapLayers({ activeLayer, onLayerChange }: MapLayersProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -61,3 +61,5 @@ export default function MapLayers({ activeLayer, onLayerChange }: MapLayersProps
     </div>
   );
 }
+
+export default memo(MapLayers);

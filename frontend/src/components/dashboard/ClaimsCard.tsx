@@ -1,18 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { FileText, Download, CheckCircle, Clock, Loader2, AlertTriangle, RefreshCw } from "lucide-react";
+import { useState, useEffect, memo } from "react";
+import {
+  FileText,
+  Download,
+  CheckCircle,
+  Clock,
+  Loader2,
+  AlertTriangle,
+  RefreshCw,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LandParcel } from "@/types";
-import { getPropertySubscription, decrementPropertyReports } from "@/lib/propertySubscription";
+import {
+  getPropertySubscription,
+  decrementPropertyReports,
+} from "@/lib/propertySubscription";
 import Link from "next/link";
 
 interface ClaimsCardProps {
   parcels: LandParcel[];
 }
 
-export default function ClaimsCard({ parcels }: ClaimsCardProps) {
+function ClaimsCard({ parcels }: ClaimsCardProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [reportGenerated, setReportGenerated] = useState(false);
   const [reportsAvailable, setReportsAvailable] = useState(true);
@@ -21,14 +32,14 @@ export default function ClaimsCard({ parcels }: ClaimsCardProps) {
   const damagedParcels = parcels.filter((p) => p.status !== "healthy");
   const totalDamage = damagedParcels.reduce(
     (acc, p) => acc + (p.damageEstimate || 0),
-    0
+    0,
   );
   const totalArea = damagedParcels.reduce((acc, p) => acc + p.area, 0);
 
   // Check reports availability on mount and when parcels change
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
+    if (typeof window === "undefined") return;
+
     let totalLeft = 0;
     damagedParcels.forEach((parcel) => {
       const subscription = getPropertySubscription(parcel.id);
@@ -38,7 +49,7 @@ export default function ClaimsCard({ parcels }: ClaimsCardProps) {
         totalLeft += parcel.reportsLeft;
       }
     });
-    
+
     setTotalReportsLeft(totalLeft);
     setReportsAvailable(totalLeft > 0);
   }, [parcels, damagedParcels, reportGenerated]);
@@ -47,7 +58,9 @@ export default function ClaimsCard({ parcels }: ClaimsCardProps) {
     // Find a parcel with reports remaining
     const parcelWithReports = damagedParcels.find((p) => {
       const sub = getPropertySubscription(p.id);
-      return (sub && sub.reportsLeft > 0) || (p.reportsLeft && p.reportsLeft > 0);
+      return (
+        (sub && sub.reportsLeft > 0) || (p.reportsLeft && p.reportsLeft > 0)
+      );
     });
 
     if (!parcelWithReports) {
@@ -56,18 +69,18 @@ export default function ClaimsCard({ parcels }: ClaimsCardProps) {
     }
 
     setIsGenerating(true);
-    
+
     // Simulate report generation
     await new Promise((resolve) => setTimeout(resolve, 2000));
-    
+
     // Decrement reports for the selected parcel
     const decremented = decrementPropertyReports(parcelWithReports.id);
-    
+
     // Update local state
     if (decremented) {
       setTotalReportsLeft((prev) => Math.max(0, prev - 1));
     }
-    
+
     setIsGenerating(false);
     setReportGenerated(true);
   };
@@ -103,8 +116,12 @@ export default function ClaimsCard({ parcels }: ClaimsCardProps) {
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-slate-400 text-sm">Rapoarte Disponibile</span>
-                <span className={`font-semibold ${totalReportsLeft > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <span className="text-slate-400 text-sm">
+                  Rapoarte Disponibile
+                </span>
+                <span
+                  className={`font-semibold ${totalReportsLeft > 0 ? "text-green-400" : "text-red-400"}`}
+                >
                   {totalReportsLeft}
                 </span>
               </div>
@@ -115,10 +132,13 @@ export default function ClaimsCard({ parcels }: ClaimsCardProps) {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-red-400">
                     <AlertTriangle className="h-5 w-5" />
-                    <span className="font-medium text-sm">Nu mai ai rapoarte disponibile</span>
+                    <span className="font-medium text-sm">
+                      Nu mai ai rapoarte disponibile
+                    </span>
                   </div>
                   <p className="text-xs text-slate-400">
-                    Trebuie să îți reînnoiești abonamentul pentru a genera rapoarte noi.
+                    Trebuie să îți reînnoiești abonamentul pentru a genera
+                    rapoarte noi.
                   </p>
                   <Link href="/dashboard/terenuri">
                     <Button className="w-full bg-orange-600 hover:bg-orange-700">
@@ -176,3 +196,4 @@ export default function ClaimsCard({ parcels }: ClaimsCardProps) {
   );
 }
 
+export default memo(ClaimsCard);

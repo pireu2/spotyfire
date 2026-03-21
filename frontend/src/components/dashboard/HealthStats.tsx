@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import {
   LineChart,
   Line,
@@ -18,7 +19,7 @@ interface HealthStatsProps {
   currentNDVI: number;
 }
 
-export default function HealthStats({ data, currentNDVI }: HealthStatsProps) {
+function HealthStats({ data, currentNDVI }: HealthStatsProps) {
   const previousNDVI = data[data.length - 2]?.value || currentNDVI;
   const trend = currentNDVI - previousNDVI;
   const trendPercent = ((trend / previousNDVI) * 100).toFixed(1);
@@ -116,3 +117,5 @@ export default function HealthStats({ data, currentNDVI }: HealthStatsProps) {
     </Card>
   );
 }
+
+export default memo(HealthStats);

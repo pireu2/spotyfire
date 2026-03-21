@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 
 export interface Report {
   id: string;
@@ -71,11 +71,11 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [credits, totalReports, activePackage, reports, isLoaded]);
 
-  const addCredits = (amount: number) => {
+  const addCredits = useCallback((amount: number) => {
     setCredits((prev) => prev + amount);
-  };
+  }, []);
 
-  const activatePackage = (pkg: PackageType, hectares: number) => {
+  const activatePackage = useCallback((pkg: PackageType, hectares: number) => {
     let reportCount = 0;
     switch (pkg) {
       case "Basic": reportCount = 5; break;
@@ -92,9 +92,9 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
     // If it's Per Raport, maybe we shouldn't reset credits if we want to keep previous? 
     // But sticking to simple replacement for now as per current function contract.
     setCredits(reportCount);
-  };
+  }, []);
 
-  const calculatePrice = (pkg: PackageType, hectares: number): number => {
+  const calculatePrice = useCallback((pkg: PackageType, hectares: number): number => {
     let basePrice = 0;
     switch (pkg) {
       case "Basic": basePrice = 29; break;
@@ -115,9 +115,9 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
     const extraCost = k * Math.pow(extraHectares, alpha);
 
     return parseFloat((basePrice + extraCost).toFixed(2));
-  };
+  }, []);
 
-  const requestReport = (title: string, content: string, propertyId?: string): boolean => {
+  const requestReport = useCallback((title: string, content: string, propertyId?: string): boolean => {
     if (credits <= 0) return false;
 
     const newReport: Report = {
@@ -132,9 +132,9 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
     setCredits((prev) => prev - 1);
     setReports((prev) => [newReport, ...prev]);
     return true;
-  };
+  }, [credits]);
 
-  const generateAutomatedReport = (title: string, content: string, propertyId?: string) => {
+  const generateAutomatedReport = useCallback((title: string, content: string, propertyId?: string) => {
     const newReport: Report = {
       id: crypto.randomUUID(),
       title,
@@ -149,9 +149,9 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
     }
 
     setReports((prev) => [newReport, ...prev]);
-  };
+  }, [credits]);
 
-  const addReport = (title: string, content: string, type: "manual" | "automated" = "manual", propertyId?: string) => {
+  const addReport = useCallback((title: string, content: string, type: "manual" | "automated" = "manual", propertyId?: string) => {
     const newReport: Report = {
       id: crypto.randomUUID(),
       title,
@@ -161,23 +161,26 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
       propertyId,
     };
     setReports((prev) => [newReport, ...prev]);
-  };
+  }, []);
+
+  const contextValue = useMemo(
+    () => ({
+      credits,
+      totalReports,
+      activePackage,
+      reports,
+      addCredits,
+      activatePackage,
+      requestReport,
+      addReport,
+      generateAutomatedReport,
+      calculatePrice,
+    }),
+    [credits, totalReports, activePackage, reports, addCredits, activatePackage, requestReport, addReport, generateAutomatedReport, calculatePrice]
+  );
 
   return (
-    <ReportsContext.Provider
-      value={{
-        credits,
-        totalReports,
-        activePackage,
-        reports,
-        addCredits,
-        activatePackage,
-        requestReport,
-        addReport,
-        generateAutomatedReport,
-        calculatePrice,
-      }}
-    >
+    <ReportsContext.Provider value={contextValue}>
       {children}
     </ReportsContext.Provider>
   );

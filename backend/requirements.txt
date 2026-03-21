@@ -17,3 +17,4 @@ odc-stac
 opencv-python-headless
 shapely
 pandas
+groq

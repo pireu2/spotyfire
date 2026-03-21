@@ -3,6 +3,10 @@
     "Neon": {
       "url": "https://mcp.neon.tech/mcp",
       "type": "http"
+    },
+    "browsermcp": {
+      "command": "npx",
+      "args": ["@browsermcp/mcp@latest"]
     }
   },
   "inputs": []
