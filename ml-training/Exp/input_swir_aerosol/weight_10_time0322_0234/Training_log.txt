@@ -1,0 +1,3 @@
+Iter 10/5000 Time: 310.48 Batch_OA = 65.65 Batch_mIoU = 33.76 CE_loss = 0.657
+Iter 20/5000 Time: 79.66 Batch_OA = 72.56 Batch_mIoU = 37.03 CE_loss = 0.578
+Iter 30/5000 Time: 78.70 Batch_OA = 81.02 Batch_mIoU = 40.86 CE_loss = 0.537

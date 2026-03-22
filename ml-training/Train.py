@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils import data
 import torch.backends.cudnn as cudnn
+from torch.amp import autocast, GradScaler
 from utils.tools import *
 from dataset.Sen2Fire_Dataset import Sen2FireDataSet
 from model.Networks import unet
@@ -88,7 +89,13 @@ def main():
 
     cudnn.enabled = True
     cudnn.benchmark = True
+    # Enable TF32 for faster matmul on Ampere+ GPUs (RTX 30xx)
+    torch.backends.cuda.matmul.allow_tf32 = True
+    torch.backends.cudnn.allow_tf32 = True
     init_seeds()
+
+    # Mixed precision scaler for AMP
+    scaler = GradScaler('cuda')
 
     # Create network
     if args.mode == 0:
@@ -106,6 +113,8 @@ def main():
 
     model.train()
     model = model.cuda()
+
+
     
     train_loader = data.DataLoader(
                     Sen2FireDataSet(args.data_dir, args.train_list, max_iters=args.num_steps_stop*args.batch_size,
@@ -138,17 +147,19 @@ def main():
         tem_time = time.time()
         adjust_learning_rate(optimizer,args.learning_rate,batch_index,args.num_steps)
         model.train()
-        optimizer.zero_grad()
+        optimizer.zero_grad(set_to_none=True)
         
         patches, labels, _, _ = train_data
-        patches = patches.cuda()      
-        labels = labels.cuda().long()
+        patches = patches.cuda(non_blocking=True)      
+        labels = labels.cuda(non_blocking=True).long()
 
-        pred = model(patches)           
-        pred_interp = interp(pred)
-              
-        # Segmentation Loss
-        L_seg_value = L_seg(pred_interp, labels)
+        # Forward pass with mixed precision (AMP)
+        with autocast('cuda'):
+            pred = model(patches)           
+            pred_interp = interp(pred)
+            # Segmentation Loss
+            L_seg_value = L_seg(pred_interp, labels)
+
         _, predict_labels = torch.max(pred_interp, 1)
         lbl_pred = predict_labels.detach().cpu().numpy()
         lbl_true = labels.detach().cpu().numpy()
@@ -163,8 +174,10 @@ def main():
         hist[batch_index,1] = batch_oa
         hist[batch_index,2] = batch_miou
         
-        L_seg_value.backward()
-        optimizer.step()
+        # Backward pass with AMP scaling
+        scaler.scale(L_seg_value).backward()
+        scaler.step(optimizer)
+        scaler.update()
 
         hist[batch_index,-1] = time.time() - tem_time
 
@@ -214,14 +227,14 @@ def main():
                 IoU[i] = TP_all[i]*1.0 / (TP_all[i] + FP_all[i] + FN_all[i] + epsilon)
             
                 if i==1:
-                    print('===>' + name_classes[i] + ' Precision: %.2f'%(P * 100))
-                    print('===>' + name_classes[i] + ' Recall: %.2f'%(R * 100))            
-                    print('===>' + name_classes[i] + ' IoU: %.2f'%(IoU[i] * 100))              
-                    print('===>' + name_classes[i] + ' F1: %.2f'%(F1[i] * 100))   
-                    f.write('===>' + name_classes[i] + ' Precision: %.2f\n'%(P * 100))
-                    f.write('===>' + name_classes[i] + ' Recall: %.2f\n'%(R * 100))            
-                    f.write('===>' + name_classes[i] + ' IoU: %.2f\n'%(IoU[i] * 100))              
-                    f.write('===>' + name_classes[i] + ' F1: %.2f\n'%(F1[i] * 100))   
+                    print('===>' + name_classes[i] + ' Precision: %.2f'%(P.item() * 100))
+                    print('===>' + name_classes[i] + ' Recall: %.2f'%(R.item() * 100))            
+                    print('===>' + name_classes[i] + ' IoU: %.2f'%(IoU[i].item() * 100))              
+                    print('===>' + name_classes[i] + ' F1: %.2f'%(F1[i].item() * 100))   
+                    f.write('===>' + name_classes[i] + ' Precision: %.2f\n'%(P.item() * 100))
+                    f.write('===>' + name_classes[i] + ' Recall: %.2f\n'%(R.item() * 100))            
+                    f.write('===>' + name_classes[i] + ' IoU: %.2f\n'%(IoU[i].item() * 100))              
+                    f.write('===>' + name_classes[i] + ' F1: %.2f\n'%(F1[i].item() * 100))   
                 
             mF1 = np.mean(F1)   
             mIoU = np.mean(F1)           
@@ -236,6 +249,14 @@ def main():
                 model_name = 'best_model.pth'
                 torch.save(model.state_dict(), os.path.join(snapshot_dir, model_name))
     
+    # Always save the final model
+    torch.save(model.state_dict(), os.path.join(snapshot_dir, 'last_model.pth'))
+    
+    # Load best model for testing (fall back to last if no validation ran)
+    if 'model_name' not in dir() and not os.path.exists(os.path.join(snapshot_dir, 'best_model.pth')):
+        model_name = 'last_model.pth'
+    elif 'model_name' not in dir():
+        model_name = 'best_model.pth'
     saved_state_dict = torch.load(os.path.join(snapshot_dir, model_name))  
     model.load_state_dict(saved_state_dict)
 
@@ -278,14 +299,14 @@ def main():
         IoU[i] = TP_all[i]*1.0 / (TP_all[i] + FP_all[i] + FN_all[i] + epsilon)
     
         if i==1:
-            print('===>' + name_classes[i] + ' Precision: %.2f'%(P * 100))
-            print('===>' + name_classes[i] + ' Recall: %.2f'%(R * 100))            
-            print('===>' + name_classes[i] + ' IoU: %.2f'%(IoU[i] * 100))              
-            print('===>' + name_classes[i] + ' F1: %.2f'%(F1[i] * 100))   
-            f.write('===>' + name_classes[i] + ' Precision: %.2f\n'%(P * 100))
-            f.write('===>' + name_classes[i] + ' Recall: %.2f\n'%(R * 100))            
-            f.write('===>' + name_classes[i] + ' IoU: %.2f\n'%(IoU[i] * 100))              
-            f.write('===>' + name_classes[i] + ' F1: %.2f\n'%(F1[i] * 100))   
+            print('===>' + name_classes[i] + ' Precision: %.2f'%(P.item() * 100))
+            print('===>' + name_classes[i] + ' Recall: %.2f'%(R.item() * 100))            
+            print('===>' + name_classes[i] + ' IoU: %.2f'%(IoU[i].item() * 100))              
+            print('===>' + name_classes[i] + ' F1: %.2f'%(F1[i].item() * 100))   
+            f.write('===>' + name_classes[i] + ' Precision: %.2f\n'%(P.item() * 100))
+            f.write('===>' + name_classes[i] + ' Recall: %.2f\n'%(R.item() * 100))            
+            f.write('===>' + name_classes[i] + ' IoU: %.2f\n'%(IoU[i].item() * 100))              
+            f.write('===>' + name_classes[i] + ' F1: %.2f\n'%(F1[i].item() * 100))   
         
     mF1 = np.mean(F1)   
     mIoU = np.mean(F1)           
@@ -293,7 +314,7 @@ def main():
     f.write('===> mIoU: %.2f mean F1: %.2f OA: %.2f\n'%(mIoU*100,mF1*100,OA*100))        
     f.close()
     saved_state_dict = torch.load(os.path.join(snapshot_dir, model_name))  
-    np.savez(snapshot_dir+'Precision_'+str(int(P * 10000))+'Recall_'+str(int(R * 10000))+'F1_'+str(int(F1[1] * 10000))+'_hist.npz',hist=hist) 
+    np.savez(snapshot_dir+'Precision_'+str(int(P.item() * 10000))+'Recall_'+str(int(R.item() * 10000))+'F1_'+str(int(F1[1].item() * 10000))+'_hist.npz',hist=hist) 
     
 if __name__ == '__main__':
     main()

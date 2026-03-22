@@ -1,0 +1,16 @@
+Iter 10/100 Time: 7.07 Batch_OA = 82.16 Batch_mIoU = 41.23 CE_loss = 0.592
+Iter 20/100 Time: 2.79 Batch_OA = 96.90 Batch_mIoU = 48.51 CE_loss = 0.483
+Iter 30/100 Time: 2.79 Batch_OA = 98.01 Batch_mIoU = 49.11 CE_loss = 0.395
+Iter 40/100 Time: 2.81 Batch_OA = 98.73 Batch_mIoU = 54.36 CE_loss = 0.348
+Iter 50/100 Time: 2.82 Batch_OA = 93.45 Batch_mIoU = 51.73 CE_loss = 0.566
+Iter 60/100 Time: 2.80 Batch_OA = 99.88 Batch_mIoU = 67.44 CE_loss = 0.286
+Iter 70/100 Time: 2.83 Batch_OA = 96.33 Batch_mIoU = 60.68 CE_loss = 0.406
+Iter 80/100 Time: 2.82 Batch_OA = 95.72 Batch_mIoU = 65.43 CE_loss = 0.395
+Iter 90/100 Time: 2.81 Batch_OA = 97.16 Batch_mIoU = 61.09 CE_loss = 0.403
+Iter 100/100 Time: 2.82 Batch_OA = 93.94 Batch_mIoU = 69.48 CE_loss = 0.477
+Testing..........
+===>fire Precision: 7.39
+===>fire Recall: 0.11
+===>fire IoU: 0.11
+===>fire F1: 0.23
+===> mIoU: 48.61 mean F1: 48.61 OA: 94.15
