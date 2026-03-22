@@ -6,9 +6,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
-import asyncio
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,23 +20,59 @@ from app.models import (
 )
 from app.data.mocks import DEMO_MODE, MOCK_ANALYSIS_RESPONSE, MOCK_CHAT_CONTEXT
 from app.services.ai_agent import chat_with_agent
-from app.database import init_db, get_db
-from app.db_models import Property
+from app.database import init_db, get_db, AsyncSessionLocal
+from app.db_models import Property, SatelliteAnalysis
 from app.routes.user import router as user_router
 from app.routes.property import router as property_router
 from app.routes.satellite import router as satellite_router
 from app.routes.alerts import router as alerts_router
 from app.services.auth import get_current_user, NeonAuthUser
-from app.services.alert_notifier import start_alert_monitoring
 import app.db_models
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
-    
-    asyncio.create_task(start_alert_monitoring())
-    
+
+    if DEMO_MODE and AsyncSessionLocal:
+        async with AsyncSessionLocal() as session:
+            properties_result = await session.execute(select(Property))
+            properties = properties_result.scalars().all()
+
+            now = datetime.utcnow()
+            for prop in properties:
+                existing_result = await session.execute(
+                    select(SatelliteAnalysis.id).where(SatelliteAnalysis.property_id == prop.id).limit(1)
+                )
+                if existing_result.scalar_one_or_none():
+                    continue
+
+                total_area = float(prop.area_ha or 100.0)
+                damage_percent = 22.0
+                damaged_area = round(total_area * damage_percent / 100.0, 4)
+                estimated_cost = round(damaged_area * 5000.0, 2)
+
+                seeded = SatelliteAnalysis(
+                    property_id=prop.id,
+                    analysis_type="demo_seed",
+                    date_range_start=(now - timedelta(days=30)).date(),
+                    date_range_end=(now - timedelta(days=7)).date(),
+                    damage_percent=damage_percent,
+                    damaged_area_ha=damaged_area,
+                    total_area_ha=total_area,
+                    estimated_cost=estimated_cost,
+                    ndvi_before=0.64,
+                    ndvi_after=0.47,
+                    burn_severity=0.29,
+                    overlay_image_b64=None,
+                    overlay_before_b64=None,
+                    overlay_after_b64=None,
+                    fire_points=None,
+                )
+                session.add(seeded)
+
+            await session.commit()
+
     yield
 
 

@@ -3,6 +3,7 @@ uvicorn
 earthengine-api
 rasterio
 numpy
+onnxruntime
 google-generativeai
 python-dotenv
 fpdf2
@@ -18,3 +19,4 @@ opencv-python-headless
 shapely
 pandas
 groq
+requests

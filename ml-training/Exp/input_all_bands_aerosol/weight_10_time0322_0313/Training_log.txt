@@ -1,0 +1,6 @@
+Iter 10/100 Time: 25.32 Batch_OA = 80.37 Batch_mIoU = 40.64 CE_loss = 0.644
+Iter 20/100 Time: 11.07 Batch_OA = 80.04 Batch_mIoU = 40.48 CE_loss = 0.573
+Iter 30/100 Time: 11.23 Batch_OA = 85.47 Batch_mIoU = 43.59 CE_loss = 0.528
+Iter 40/100 Time: 11.16 Batch_OA = 92.14 Batch_mIoU = 49.13 CE_loss = 0.498
+Iter 50/100 Time: 11.13 Batch_OA = 87.63 Batch_mIoU = 50.55 CE_loss = 0.587
+Iter 60/100 Time: 11.12 Batch_OA = 85.61 Batch_mIoU = 47.96 CE_loss = 0.487

@@ -8,7 +8,7 @@ import dynamic from "next/dynamic";
 const ReportMapView = dynamic(() => import("@/components/map/ReportMapView"), {
   ssr: false,
   loading: () => (
-    <div className="h-[400px] bg-slate-900/50 rounded-lg border border-slate-800 flex items-center justify-center">
+    <div className="h-400px bg-slate-900/50 rounded-lg border border-slate-800 flex items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-green-500" />
     </div>
   ),
@@ -65,7 +65,7 @@ export default function AnalysisDetailModal({
         `${API_URL}/api/analyses/${analysisId}`,
         {
           headers: { Authorization: `Bearer ${accessToken}` },
-        }
+        },
       );
 
       if (!analysisResponse.ok) throw new Error("Failed to load analysis");
@@ -77,7 +77,7 @@ export default function AnalysisDetailModal({
         `${API_URL}/api/properties/${analysisData.property_id}`,
         {
           headers: { Authorization: `Bearer ${accessToken}` },
-        }
+        },
       );
 
       if (propertyResponse.ok) {
@@ -98,7 +98,7 @@ export default function AnalysisDetailModal({
         `${API_URL}/api/analyses/${analysisId}/report`,
         {
           headers: { Authorization: `Bearer ${accessToken}` },
-        }
+        },
       );
 
       if (!response.ok) throw new Error("Failed to download report");

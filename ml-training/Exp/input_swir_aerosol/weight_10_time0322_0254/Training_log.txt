@@ -1,0 +1,172 @@
+Iter 10/5000 Time: 7.48 Batch_OA = 59.76 Batch_mIoU = 31.06 CE_loss = 0.686
+Iter 20/5000 Time: 2.80 Batch_OA = 79.59 Batch_mIoU = 39.91 CE_loss = 0.561
+Iter 30/5000 Time: 2.79 Batch_OA = 96.86 Batch_mIoU = 48.43 CE_loss = 0.434
+Iter 40/5000 Time: 2.79 Batch_OA = 92.38 Batch_mIoU = 46.24 CE_loss = 0.477
+Iter 50/5000 Time: 2.80 Batch_OA = 95.77 Batch_mIoU = 47.88 CE_loss = 0.482
+Iter 60/5000 Time: 2.80 Batch_OA = 98.92 Batch_mIoU = 56.96 CE_loss = 0.362
+Iter 70/5000 Time: 2.84 Batch_OA = 99.08 Batch_mIoU = 59.55 CE_loss = 0.343
+Iter 80/5000 Time: 2.78 Batch_OA = 92.90 Batch_mIoU = 56.49 CE_loss = 0.611
+Iter 90/5000 Time: 2.79 Batch_OA = 97.23 Batch_mIoU = 58.65 CE_loss = 0.313
+Iter 100/5000 Time: 2.79 Batch_OA = 99.71 Batch_mIoU = 69.86 CE_loss = 0.257
+Iter 110/5000 Time: 2.82 Batch_OA = 99.67 Batch_mIoU = 69.84 CE_loss = 0.259
+Iter 120/5000 Time: 2.79 Batch_OA = 99.01 Batch_mIoU = 62.04 CE_loss = 0.314
+Iter 130/5000 Time: 2.80 Batch_OA = 98.53 Batch_mIoU = 79.26 CE_loss = 0.361
+Iter 140/5000 Time: 2.79 Batch_OA = 97.25 Batch_mIoU = 86.12 CE_loss = 0.405
+Iter 150/5000 Time: 2.80 Batch_OA = 98.26 Batch_mIoU = 76.63 CE_loss = 0.345
+Iter 160/5000 Time: 2.80 Batch_OA = 97.40 Batch_mIoU = 76.20 CE_loss = 0.449
+Iter 170/5000 Time: 2.81 Batch_OA = 95.88 Batch_mIoU = 70.45 CE_loss = 0.433
+Iter 180/5000 Time: 2.80 Batch_OA = 97.55 Batch_mIoU = 63.77 CE_loss = 0.383
+Iter 190/5000 Time: 2.81 Batch_OA = 98.75 Batch_mIoU = 79.38 CE_loss = 0.315
+Iter 200/5000 Time: 2.78 Batch_OA = 99.97 Batch_mIoU = 87.49 CE_loss = 0.219
+Iter 210/5000 Time: 2.80 Batch_OA = 96.41 Batch_mIoU = 60.71 CE_loss = 0.404
+Iter 220/5000 Time: 2.78 Batch_OA = 95.57 Batch_mIoU = 92.78 CE_loss = 0.336
+Iter 230/5000 Time: 2.81 Batch_OA = 98.78 Batch_mIoU = 94.39 CE_loss = 0.295
+Iter 240/5000 Time: 2.82 Batch_OA = 95.21 Batch_mIoU = 65.12 CE_loss = 0.417
+Iter 250/5000 Time: 2.79 Batch_OA = 100.00 Batch_mIoU = 97.50 CE_loss = 0.199
+Iter 260/5000 Time: 2.84 Batch_OA = 98.42 Batch_mIoU = 76.71 CE_loss = 0.331
+Iter 270/5000 Time: 2.79 Batch_OA = 91.03 Batch_mIoU = 58.17 CE_loss = 0.607
+Iter 280/5000 Time: 2.82 Batch_OA = 96.44 Batch_mIoU = 78.22 CE_loss = 0.344
+Iter 290/5000 Time: 2.81 Batch_OA = 93.85 Batch_mIoU = 84.42 CE_loss = 0.466
+Iter 300/5000 Time: 2.82 Batch_OA = 99.43 Batch_mIoU = 92.21 CE_loss = 0.253
+Iter 310/5000 Time: 2.82 Batch_OA = 93.89 Batch_mIoU = 86.96 CE_loss = 0.413
+Iter 320/5000 Time: 2.82 Batch_OA = 96.13 Batch_mIoU = 70.57 CE_loss = 0.381
+Iter 330/5000 Time: 2.82 Batch_OA = 93.35 Batch_mIoU = 86.67 CE_loss = 0.468
+Iter 340/5000 Time: 2.81 Batch_OA = 95.63 Batch_mIoU = 87.81 CE_loss = 0.322
+Iter 350/5000 Time: 2.82 Batch_OA = 99.77 Batch_mIoU = 74.88 CE_loss = 0.188
+Iter 360/5000 Time: 2.82 Batch_OA = 96.45 Batch_mIoU = 85.72 CE_loss = 0.417
+Iter 370/5000 Time: 2.81 Batch_OA = 98.39 Batch_mIoU = 91.70 CE_loss = 0.337
+Iter 380/5000 Time: 2.82 Batch_OA = 99.68 Batch_mIoU = 94.84 CE_loss = 0.216
+Iter 390/5000 Time: 2.83 Batch_OA = 96.21 Batch_mIoU = 73.11 CE_loss = 0.371
+Iter 400/5000 Time: 2.83 Batch_OA = 96.36 Batch_mIoU = 90.68 CE_loss = 0.385
+Iter 410/5000 Time: 2.81 Batch_OA = 98.77 Batch_mIoU = 96.89 CE_loss = 0.253
+Iter 420/5000 Time: 2.80 Batch_OA = 95.84 Batch_mIoU = 85.42 CE_loss = 0.499
+Iter 430/5000 Time: 2.85 Batch_OA = 95.95 Batch_mIoU = 90.51 CE_loss = 0.382
+Iter 440/5000 Time: 2.81 Batch_OA = 95.89 Batch_mIoU = 75.46 CE_loss = 0.496
+Iter 450/5000 Time: 2.82 Batch_OA = 99.78 Batch_mIoU = 87.39 CE_loss = 0.228
+Iter 460/5000 Time: 2.82 Batch_OA = 100.00 Batch_mIoU = 97.50 CE_loss = 0.164
+Iter 470/5000 Time: 2.85 Batch_OA = 97.58 Batch_mIoU = 81.30 CE_loss = 0.327
+Iter 480/5000 Time: 2.82 Batch_OA = 98.81 Batch_mIoU = 81.91 CE_loss = 0.309
+Iter 490/5000 Time: 2.82 Batch_OA = 96.52 Batch_mIoU = 93.27 CE_loss = 0.343
+Iter 500/5000 Time: 2.82 Batch_OA = 94.17 Batch_mIoU = 84.63 CE_loss = 0.385
+Validating..........
+===>fire Precision: 30.60
+===>fire Recall: 1.66
+===>fire IoU: 1.60
+===>fire F1: 3.16
+===> mIoU: 50.65 mean F1: 50.65 OA: 96.37
+Save Model
+Iter 510/5000 Time: 2.82 Batch_OA = 93.74 Batch_mIoU = 71.96 CE_loss = 0.427
+Iter 520/5000 Time: 2.85 Batch_OA = 99.32 Batch_mIoU = 97.16 CE_loss = 0.266
+Iter 530/5000 Time: 2.82 Batch_OA = 96.59 Batch_mIoU = 63.32 CE_loss = 0.455
+Iter 540/5000 Time: 2.82 Batch_OA = 99.72 Batch_mIoU = 87.36 CE_loss = 0.183
+Iter 550/5000 Time: 2.85 Batch_OA = 99.94 Batch_mIoU = 92.47 CE_loss = 0.167
+Iter 560/5000 Time: 2.81 Batch_OA = 95.98 Batch_mIoU = 87.99 CE_loss = 0.354
+Iter 570/5000 Time: 2.83 Batch_OA = 95.43 Batch_mIoU = 85.28 CE_loss = 0.540
+Iter 580/5000 Time: 2.82 Batch_OA = 93.12 Batch_mIoU = 89.06 CE_loss = 0.429
+Iter 590/5000 Time: 2.82 Batch_OA = 94.56 Batch_mIoU = 89.78 CE_loss = 0.423
+Iter 600/5000 Time: 2.88 Batch_OA = 100.00 Batch_mIoU = 97.50 CE_loss = 0.154
+Iter 610/5000 Time: 2.82 Batch_OA = 95.49 Batch_mIoU = 77.76 CE_loss = 0.402
+Iter 620/5000 Time: 2.81 Batch_OA = 100.00 Batch_mIoU = 100.00 CE_loss = 0.154
+Iter 630/5000 Time: 2.83 Batch_OA = 92.57 Batch_mIoU = 81.30 CE_loss = 0.461
+Iter 640/5000 Time: 2.85 Batch_OA = 95.95 Batch_mIoU = 80.48 CE_loss = 0.475
+Iter 650/5000 Time: 2.86 Batch_OA = 98.53 Batch_mIoU = 84.27 CE_loss = 0.363
+Iter 660/5000 Time: 2.88 Batch_OA = 96.74 Batch_mIoU = 65.88 CE_loss = 0.360
+Iter 670/5000 Time: 2.86 Batch_OA = 99.00 Batch_mIoU = 74.50 CE_loss = 0.270
+Iter 680/5000 Time: 2.86 Batch_OA = 96.54 Batch_mIoU = 65.80 CE_loss = 0.308
+Iter 690/5000 Time: 2.85 Batch_OA = 95.86 Batch_mIoU = 82.93 CE_loss = 0.426
+Iter 700/5000 Time: 2.87 Batch_OA = 99.63 Batch_mIoU = 97.33 CE_loss = 0.186
+Iter 710/5000 Time: 2.89 Batch_OA = 96.03 Batch_mIoU = 90.51 CE_loss = 0.357
+Iter 720/5000 Time: 2.83 Batch_OA = 97.42 Batch_mIoU = 93.71 CE_loss = 0.333
+Iter 730/5000 Time: 2.86 Batch_OA = 100.00 Batch_mIoU = 97.50 CE_loss = 0.139
+Iter 740/5000 Time: 2.83 Batch_OA = 92.70 Batch_mIoU = 83.86 CE_loss = 0.671
+Iter 750/5000 Time: 2.83 Batch_OA = 98.34 Batch_mIoU = 94.17 CE_loss = 0.282
+Iter 760/5000 Time: 2.83 Batch_OA = 95.59 Batch_mIoU = 92.80 CE_loss = 0.339
+Iter 770/5000 Time: 2.79 Batch_OA = 98.08 Batch_mIoU = 89.06 CE_loss = 0.372
+Iter 780/5000 Time: 2.81 Batch_OA = 99.77 Batch_mIoU = 94.88 CE_loss = 0.165
+Iter 790/5000 Time: 2.85 Batch_OA = 98.88 Batch_mIoU = 89.49 CE_loss = 0.220
+Iter 800/5000 Time: 2.81 Batch_OA = 96.01 Batch_mIoU = 65.54 CE_loss = 0.416
+Iter 810/5000 Time: 2.82 Batch_OA = 95.74 Batch_mIoU = 82.95 CE_loss = 0.466
+Iter 820/5000 Time: 2.81 Batch_OA = 98.29 Batch_mIoU = 86.65 CE_loss = 0.305
+Iter 830/5000 Time: 2.81 Batch_OA = 97.99 Batch_mIoU = 94.00 CE_loss = 0.300
+Iter 840/5000 Time: 2.79 Batch_OA = 99.01 Batch_mIoU = 92.01 CE_loss = 0.255
+Iter 850/5000 Time: 2.79 Batch_OA = 95.56 Batch_mIoU = 67.78 CE_loss = 0.516
+Iter 860/5000 Time: 2.80 Batch_OA = 96.32 Batch_mIoU = 88.16 CE_loss = 0.407
+Iter 870/5000 Time: 2.80 Batch_OA = 98.86 Batch_mIoU = 94.48 CE_loss = 0.257
+Iter 880/5000 Time: 2.80 Batch_OA = 93.61 Batch_mIoU = 84.32 CE_loss = 0.514
+Iter 890/5000 Time: 2.83 Batch_OA = 93.17 Batch_mIoU = 76.59 CE_loss = 0.424
+Iter 900/5000 Time: 2.80 Batch_OA = 97.73 Batch_mIoU = 83.97 CE_loss = 0.409
+Iter 910/5000 Time: 2.80 Batch_OA = 95.17 Batch_mIoU = 70.23 CE_loss = 0.456
+Iter 920/5000 Time: 2.80 Batch_OA = 99.96 Batch_mIoU = 94.98 CE_loss = 0.157
+Iter 930/5000 Time: 2.79 Batch_OA = 99.86 Batch_mIoU = 92.43 CE_loss = 0.155
+Iter 940/5000 Time: 2.80 Batch_OA = 99.53 Batch_mIoU = 97.28 CE_loss = 0.187
+Iter 950/5000 Time: 2.81 Batch_OA = 100.00 Batch_mIoU = 97.50 CE_loss = 0.121
+Iter 960/5000 Time: 2.80 Batch_OA = 99.38 Batch_mIoU = 92.19 CE_loss = 0.201
+Iter 970/5000 Time: 2.80 Batch_OA = 99.38 Batch_mIoU = 84.69 CE_loss = 0.214
+Iter 980/5000 Time: 2.81 Batch_OA = 99.62 Batch_mIoU = 94.81 CE_loss = 0.191
+Iter 990/5000 Time: 2.80 Batch_OA = 93.81 Batch_mIoU = 86.97 CE_loss = 0.550
+Iter 1000/5000 Time: 2.78 Batch_OA = 99.10 Batch_mIoU = 74.66 CE_loss = 0.213
+Validating..........
+===>fire Precision: 44.25
+===>fire Recall: 3.45
+===>fire IoU: 3.31
+===>fire F1: 6.41
+===> mIoU: 52.29 mean F1: 52.29 OA: 96.42
+Save Model
+Iter 1010/5000 Time: 2.81 Batch_OA = 93.34 Batch_mIoU = 74.26 CE_loss = 0.524
+Iter 1020/5000 Time: 2.80 Batch_OA = 93.78 Batch_mIoU = 89.39 CE_loss = 0.404
+Iter 1030/5000 Time: 2.80 Batch_OA = 99.83 Batch_mIoU = 79.91 CE_loss = 0.168
+Iter 1040/5000 Time: 2.82 Batch_OA = 97.37 Batch_mIoU = 91.19 CE_loss = 0.280
+Iter 1050/5000 Time: 2.80 Batch_OA = 93.72 Batch_mIoU = 86.87 CE_loss = 0.388
+Iter 1060/5000 Time: 2.82 Batch_OA = 99.94 Batch_mIoU = 94.97 CE_loss = 0.188
+Iter 1070/5000 Time: 2.80 Batch_OA = 100.00 Batch_mIoU = 100.00 CE_loss = 0.135
+Iter 1080/5000 Time: 2.80 Batch_OA = 95.64 Batch_mIoU = 87.82 CE_loss = 0.482
+Iter 1090/5000 Time: 2.79 Batch_OA = 86.77 Batch_mIoU = 80.89 CE_loss = 0.680
+Iter 1100/5000 Time: 2.80 Batch_OA = 93.68 Batch_mIoU = 64.41 CE_loss = 0.584
+Iter 1110/5000 Time: 2.81 Batch_OA = 93.03 Batch_mIoU = 71.70 CE_loss = 0.647
+Iter 1120/5000 Time: 2.80 Batch_OA = 97.34 Batch_mIoU = 71.25 CE_loss = 0.346
+Iter 1130/5000 Time: 2.84 Batch_OA = 99.33 Batch_mIoU = 92.18 CE_loss = 0.271
+Iter 1140/5000 Time: 2.78 Batch_OA = 95.94 Batch_mIoU = 85.51 CE_loss = 0.509
+Iter 1150/5000 Time: 2.82 Batch_OA = 95.44 Batch_mIoU = 62.76 CE_loss = 0.358
+Iter 1160/5000 Time: 2.80 Batch_OA = 97.94 Batch_mIoU = 69.10 CE_loss = 0.375
+Iter 1170/5000 Time: 2.80 Batch_OA = 95.76 Batch_mIoU = 85.38 CE_loss = 0.302
+Iter 1180/5000 Time: 2.81 Batch_OA = 97.47 Batch_mIoU = 91.23 CE_loss = 0.358
+Iter 1190/5000 Time: 2.82 Batch_OA = 100.00 Batch_mIoU = 100.00 CE_loss = 0.179
+Iter 1200/5000 Time: 2.83 Batch_OA = 98.23 Batch_mIoU = 91.64 CE_loss = 0.307
+Iter 1210/5000 Time: 2.81 Batch_OA = 100.00 Batch_mIoU = 100.00 CE_loss = 0.147
+Iter 1220/5000 Time: 2.79 Batch_OA = 99.76 Batch_mIoU = 94.88 CE_loss = 0.179
+Iter 1230/5000 Time: 2.82 Batch_OA = 92.70 Batch_mIoU = 81.35 CE_loss = 0.557
+Iter 1240/5000 Time: 2.79 Batch_OA = 100.00 Batch_mIoU = 97.50 CE_loss = 0.151
+Iter 1250/5000 Time: 2.80 Batch_OA = 100.00 Batch_mIoU = 100.00 CE_loss = 0.132
+Iter 1260/5000 Time: 2.80 Batch_OA = 96.17 Batch_mIoU = 85.58 CE_loss = 0.414
+Iter 1270/5000 Time: 2.82 Batch_OA = 99.83 Batch_mIoU = 94.91 CE_loss = 0.150
+Iter 1280/5000 Time: 2.80 Batch_OA = 99.17 Batch_mIoU = 97.09 CE_loss = 0.218
+Iter 1290/5000 Time: 2.80 Batch_OA = 99.08 Batch_mIoU = 94.54 CE_loss = 0.264
+Iter 1300/5000 Time: 2.80 Batch_OA = 88.98 Batch_mIoU = 84.49 CE_loss = 0.753
+Iter 1310/5000 Time: 2.80 Batch_OA = 99.98 Batch_mIoU = 94.99 CE_loss = 0.131
+Iter 1320/5000 Time: 2.79 Batch_OA = 99.48 Batch_mIoU = 92.24 CE_loss = 0.178
+Iter 1330/5000 Time: 2.79 Batch_OA = 100.00 Batch_mIoU = 100.00 CE_loss = 0.124
+Iter 1340/5000 Time: 2.80 Batch_OA = 98.76 Batch_mIoU = 91.89 CE_loss = 0.213
+Iter 1350/5000 Time: 2.82 Batch_OA = 99.25 Batch_mIoU = 97.13 CE_loss = 0.201
+Iter 1360/5000 Time: 2.83 Batch_OA = 89.80 Batch_mIoU = 72.43 CE_loss = 0.669
+Iter 1370/5000 Time: 2.82 Batch_OA = 100.00 Batch_mIoU = 97.50 CE_loss = 0.132
+Iter 1380/5000 Time: 2.82 Batch_OA = 98.72 Batch_mIoU = 94.36 CE_loss = 0.226
+Iter 1390/5000 Time: 2.80 Batch_OA = 92.39 Batch_mIoU = 81.20 CE_loss = 0.443
+Iter 1400/5000 Time: 2.80 Batch_OA = 98.89 Batch_mIoU = 86.95 CE_loss = 0.311
+Iter 1410/5000 Time: 2.83 Batch_OA = 99.93 Batch_mIoU = 92.47 CE_loss = 0.125
+Iter 1420/5000 Time: 2.80 Batch_OA = 95.50 Batch_mIoU = 85.27 CE_loss = 0.397
+Iter 1430/5000 Time: 2.81 Batch_OA = 96.05 Batch_mIoU = 70.54 CE_loss = 0.355
+Iter 1440/5000 Time: 2.80 Batch_OA = 96.21 Batch_mIoU = 78.10 CE_loss = 0.319
+Iter 1450/5000 Time: 2.81 Batch_OA = 94.41 Batch_mIoU = 89.73 CE_loss = 0.418
+Iter 1460/5000 Time: 2.79 Batch_OA = 96.89 Batch_mIoU = 70.96 CE_loss = 0.316
+Iter 1470/5000 Time: 2.81 Batch_OA = 98.80 Batch_mIoU = 71.99 CE_loss = 0.201
+Iter 1480/5000 Time: 2.80 Batch_OA = 96.70 Batch_mIoU = 75.87 CE_loss = 0.350
+Iter 1490/5000 Time: 2.80 Batch_OA = 99.50 Batch_mIoU = 92.25 CE_loss = 0.203
+Iter 1500/5000 Time: 2.81 Batch_OA = 91.23 Batch_mIoU = 78.12 CE_loss = 0.604
+Validating..........
+===>fire Precision: 12.21
+===>fire Recall: 11.11
+===>fire IoU: 6.18
+===>fire F1: 11.64
+===> mIoU: 54.27 mean F1: 54.27 OA: 94.00
+Save Model
+Iter 1510/5000 Time: 2.80 Batch_OA = 99.01 Batch_mIoU = 67.01 CE_loss = 0.192
