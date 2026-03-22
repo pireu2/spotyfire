@@ -86,7 +86,12 @@ async def get_alerts_near_properties(
     user_id = user.id
     
     props_result = await db.execute(
-        select(Property).where(Property.user_id == user_id)
+        select(Property).where(
+            or_(
+                Property.user_id == user_id,
+                Property.assigned_user_id == user_id
+            )
+        )
     )
     user_properties = props_result.scalars().all()
     

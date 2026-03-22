@@ -3,7 +3,7 @@ Property routes for managing user properties/land parcels.
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, or_
 from typing import List
 import uuid
 
@@ -63,6 +63,7 @@ def property_to_response(prop: Property) -> PropertyResponse:
         center_lng=prop.center_lng,
         estimated_value=prop.estimated_value,
         risk_score=prop.risk_score,
+        assigned_user_id=prop.assigned_user_id,
         last_analysed_at=prop.last_analysed_at,
         created_at=prop.created_at,
         updated_at=prop.updated_at,
@@ -75,7 +76,12 @@ async def get_properties(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(Property).where(Property.user_id == user.id)
+        select(Property).where(
+            or_(
+                Property.user_id == user.id,
+                Property.assigned_user_id == user.id
+            )
+        )
     )
     properties = result.scalars().all()
     return [property_to_response(p) for p in properties]
@@ -90,7 +96,10 @@ async def get_property(
     result = await db.execute(
         select(Property).where(
             Property.id == uuid.UUID(property_id),
-            Property.user_id == user.id
+            or_(
+                Property.user_id == user.id,
+                Property.assigned_user_id == user.id
+            )
         )
     )
     prop = result.scalar_one_or_none()
@@ -125,6 +134,7 @@ async def create_property(
         center_lat=data.center_lat,
         center_lng=data.center_lng,
         estimated_value=data.estimated_value,
+        assigned_user_id=data.assigned_user_id,
     )
     db.add(prop)
     await db.commit()

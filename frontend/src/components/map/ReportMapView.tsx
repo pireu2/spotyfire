@@ -8,6 +8,22 @@ import {
   ImageOverlay,
   useMap,
 } from "react-leaflet";
+
+function MapContent({ children }: { children: React.ReactNode }) {
+  const map = useMap();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (map) {
+      const timer = setTimeout(() => setReady(true), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [map]);
+
+  if (!ready) return null;
+  return <>{children}</>;
+}
+
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Loader2 } from "lucide-react";
@@ -87,6 +103,12 @@ export default function ReportMapView({
 }: ReportMapViewProps) {
   const [bounds, setBounds] = useState<L.LatLngBounds | null>(null);
   const [positions, setPositions] = useState<L.LatLngExpression[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
 
   useEffect(() => {
     console.log("Geometry received:", geometry);
@@ -137,7 +159,7 @@ export default function ReportMapView({
     }
   }, [geometry]);
 
-  if (!bounds || positions.length === 0) {
+  if (!isMounted || !bounds || positions.length === 0) {
     return (
       <div className="h-[400px] bg-slate-900/50 rounded-lg border border-slate-800 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-green-500" />
@@ -148,35 +170,39 @@ export default function ReportMapView({
   return (
     <div className="h-[400px] rounded-lg overflow-hidden border border-slate-700">
       <MapContainer
+        key={`report-map-${analysisId}`}
         center={bounds.getCenter()}
         zoom={13}
         style={{ height: "100%", width: "100%" }}
         zoomControl={true}
       >
-        <TileLayer
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
-          maxZoom={19}
-        />
+        <MapContent>
+          <TileLayer
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+            maxZoom={19}
+          />
 
-        <Polygon
-          positions={positions}
-          pathOptions={{
-            color: "#10b981",
-            fillColor: "#10b981",
-            fillOpacity: 0.1,
-            weight: 2,
-          }}
-        />
+          <Polygon
+            positions={positions}
+            pathOptions={{
+              color: "#10b981",
+              fillColor: "#10b981",
+              fillOpacity: 0.1,
+              weight: 2,
+            }}
+          />
 
-        <OverlayLayer
-          analysisId={analysisId}
-          accessToken={accessToken}
-          bounds={bounds}
-        />
+          <OverlayLayer
+            analysisId={analysisId}
+            accessToken={accessToken}
+            bounds={bounds}
+          />
 
-        <MapBounds bounds={bounds} />
+          <MapBounds bounds={bounds} />
+        </MapContent>
       </MapContainer>
     </div>
   );
+
 }

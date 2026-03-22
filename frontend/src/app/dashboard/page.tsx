@@ -18,10 +18,18 @@ import { calculateAverageNDVI } from "@/utils/property.utils";
 import { mockNDVIData } from "@/lib/mocks";
 import type { LandParcel } from "@/types";
 
+import { useEffect } from "react";
+import { getCurrentUserRole } from "@/app/actions/user";
+
 export default function DashboardPage() {
   const { userId, accessToken, isLoading: authLoading } = useAuth();
   const [activeLayer, setActiveLayer] = useState("standard");
   const [selectedParcel, setSelectedParcel] = useState<LandParcel | null>(null);
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    getCurrentUserRole().then(r => setRole(r));
+  }, []);
 
   const { parcels, isLoading: loadingProperties } = useProperties(
     userId,
@@ -39,7 +47,7 @@ export default function DashboardPage() {
     setActiveLayer(layer);
   }, []);
 
-  if (authLoading || loadingProperties) {
+  if (authLoading || loadingProperties || role === null) {
     return (
       <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-green-500" />
@@ -48,7 +56,7 @@ export default function DashboardPage() {
   }
 
   if (parcels.length === 0) {
-    return <EmptyPropertiesState />;
+    return <EmptyPropertiesState role={role} />;
   }
 
   return (
@@ -75,12 +83,12 @@ export default function DashboardPage() {
       </div>
 
       <div className="w-full md:w-80 space-y-4 md:overflow-y-auto">
-        <HealthStats data={mockNDVIData} currentNDVI={currentNDVI} />
-        <AlertsPanel alerts={alerts} />
+        {role !== "individual" && <HealthStats data={mockNDVIData} currentNDVI={currentNDVI} />}
+        {role !== "individual" && <AlertsPanel alerts={alerts} />}
         <ClaimsCard parcels={parcels} />
       </div>
 
-      <AiAssistant />
+      {role !== "individual" && <AiAssistant />}
     </div>
   );
 }

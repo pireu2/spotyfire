@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Plus,
   Loader2,
@@ -11,6 +12,7 @@ import {
   MapPin,
   Euro,
   SquareIcon,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PackageType, Property } from "@/types";
@@ -18,7 +20,7 @@ import { getProperties, deleteProperty } from "@/lib/api";
 import { useUser } from "@stackframe/stack";
 import AddTerrainPanel from "@/components/dashboard/AddTerrainPanel";
 import TerenCard from "@/components/dashboard/TerenCard";
-import PricingModal from "@/components/payment/PricingModal";
+import Link from "next/link";
 
 const getCropIcon = (cropType: string) => {
   switch (cropType.toLowerCase()) {
@@ -64,12 +66,15 @@ const isPackageType = (value: string): value is PackageType => {
 
 export default function TerenuriPage() {
   const user = useUser();
+  const searchParams = useSearchParams();
+  const assignTo = searchParams.get("assignTo");
+  
   const [properties, setProperties] = useState<Property[]>([]);
+  const [allProperties, setAllProperties] = useState<Property[]>([]);
+  const [ownerMap, setOwnerMap] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showAddPanel, setShowAddPanel] = useState(false);
-  const [showRenewModal, setShowRenewModal] = useState(false);
-  const [renewProperty, setRenewProperty] = useState<Property | null>(null);
 
   // New state for delete confirmation
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -78,10 +83,26 @@ export default function TerenuriPage() {
   );
 
   const PACKAGE_REPORTS: Record<PackageType, number> = {
-    Basic: 5,
+    Basic: 3,
     Pro: 15,
     Enterprise: 30,
     "Per Raport": 0,
+  };
+
+  const fetchOwnerMap = async () => {
+    try {
+      const res = await fetch("/api/auth/insured-users");
+      if (res.ok) {
+        const data = await res.json();
+        const map: Record<string, string> = {};
+        for (const u of data) {
+          map[u.stack_user_id] = u.name || u.email;
+        }
+        setOwnerMap(map);
+      }
+    } catch (e) {
+      console.error("Failed to fetch owner map:", e);
+    }
   };
 
   const fetchProperties = async () => {
@@ -90,7 +111,7 @@ export default function TerenuriPage() {
       const accessToken = await user
         ?.getAuthJson()
         .then((auth) => auth?.accessToken);
-      const data = await getProperties(accessToken || undefined);
+      let data = await getProperties(accessToken || undefined);
 
       // Get locally stored subscription info (since backend may not persist it)
       const savedSubscriptions = JSON.parse(
@@ -98,7 +119,7 @@ export default function TerenuriPage() {
       );
 
       // Merge API data with localStorage subscription info
-      const propertiesWithReports = data.map((p) => {
+      let propertiesWithReports = data.map((p) => {
         const savedSub = savedSubscriptions[p.id];
         const savedPackage = savedSub?.activePackage;
         const activePackage: PackageType = isPackageType(savedPackage)
@@ -108,7 +129,7 @@ export default function TerenuriPage() {
           savedSub?.reportsLeft ??
           p.reportsLeft ??
           PACKAGE_REPORTS[activePackage] ??
-          5;
+          3;
 
         return {
           ...p,
@@ -116,7 +137,26 @@ export default function TerenuriPage() {
           reportsLeft,
         };
       });
-      setProperties(propertiesWithReports);
+
+      // Store all properties (unfiltered) for the map
+      setAllProperties(propertiesWithReports);
+
+      // If filtering by assignTo, show only that user's properties in the list
+      let filtered = propertiesWithReports;
+      if (assignTo) {
+        filtered = propertiesWithReports.filter(
+          (p) => p.assigned_user_id === assignTo
+        );
+      }
+
+      // Sort by owner (assigned_user_id) so properties are grouped by person
+      filtered.sort((a, b) => {
+        const ownerA = a.assigned_user_id || "";
+        const ownerB = b.assigned_user_id || "";
+        return ownerA.localeCompare(ownerB);
+      });
+
+      setProperties(filtered);
     } catch (error) {
       console.error("Failed to fetch properties:", error);
     } finally {
@@ -127,8 +167,9 @@ export default function TerenuriPage() {
   useEffect(() => {
     if (user) {
       fetchProperties();
+      fetchOwnerMap();
     }
-  }, [user]);
+  }, [user, assignTo]);
 
   const handleDeleteClick = (property: Property) => {
     setPropertyToDelete(property);
@@ -155,41 +196,26 @@ export default function TerenuriPage() {
   };
 
   const handleRenew = (property: Property) => {
-    setRenewProperty(property);
-    setShowRenewModal(true);
-  };
-
-  const handleRenewSuccess = (pkg: string, reports: number) => {
-    if (!renewProperty) return;
-
-    if (!isPackageType(pkg)) {
-      console.error("Invalid package type:", pkg);
-      return;
-    }
-
-    // Save to localStorage
+    // Directly renew to Basic with 3 reports
     const subscriptionData = JSON.parse(
       localStorage.getItem("propertySubscriptions") || "{}",
     );
-    subscriptionData[renewProperty.id] = {
-      activePackage: pkg,
-      reportsLeft: reports,
+    subscriptionData[property.id] = {
+      activePackage: "Basic",
+      reportsLeft: 3,
     };
     localStorage.setItem(
       "propertySubscriptions",
       JSON.stringify(subscriptionData),
     );
 
-    // Update the property with new package and reports
     setProperties((prev) =>
       prev.map((p) =>
-        p.id === renewProperty.id
-          ? { ...p, activePackage: pkg, reportsLeft: reports }
+        p.id === property.id
+          ? { ...p, activePackage: "Basic" as PackageType, reportsLeft: 3 }
           : p,
       ),
     );
-    setShowRenewModal(false);
-    setRenewProperty(null);
   };
 
   const handleAddSuccess = () => {
@@ -197,21 +223,42 @@ export default function TerenuriPage() {
     setShowAddPanel(false);
   };
 
+  const assignToName = assignTo ? (ownerMap[assignTo] || assignTo) : null;
+
   return (
     <div className="h-[calc(100vh-4rem)] flex">
       {showAddPanel ? (
         <AddTerrainPanel
           onClose={() => setShowAddPanel(false)}
           onSuccess={handleAddSuccess}
-          existingProperties={properties}
+          existingProperties={allProperties}
+          assignedUserId={assignTo || undefined}
         />
       ) : (
         <div className="flex-1 p-6 overflow-y-auto">
+          {/* Banner when filtering by person */}
+          {assignTo && (
+            <div className="mb-4 p-3 bg-green-900/30 border border-green-700/50 rounded-lg flex items-center justify-between">
+              <span className="text-green-400 text-sm font-medium">
+                Vizualizezi terenurile lui: <strong>{assignToName}</strong>
+              </span>
+              <Link href="/dashboard/terenuri">
+                <Button variant="ghost" size="sm" className="text-green-400 hover:text-white">
+                  <ArrowLeft className="h-4 w-4 mr-1" /> Toate Terenurile
+                </Button>
+              </Link>
+            </div>
+          )}
+
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-white">Terenurile Mele</h1>
+              <h1 className="text-2xl font-bold text-white">
+                {assignTo ? `Terenurile lui ${assignToName}` : "Terenurile Mele"}
+              </h1>
               <p className="text-slate-400 text-sm mt-1">
-                Gestionează și monitorizează terenurile tale agricole
+                {assignTo
+                  ? "Gestionează terenurile persoanei asigurate"
+                  : "Gestionează și monitorizează terenurile tale agricole"}
               </p>
             </div>
             <Button
@@ -231,10 +278,14 @@ export default function TerenuriPage() {
             <div className="flex flex-col items-center justify-center h-64 bg-slate-800/50 rounded-xl border border-slate-700">
               <MapPin className="h-16 w-16 text-slate-600 mb-4" />
               <h3 className="text-lg font-medium text-white mb-2">
-                Nu ai niciun teren înregistrat
+                {assignTo
+                  ? "Această persoană nu are terenuri încă"
+                  : "Nu ai niciun teren înregistrat"}
               </h3>
               <p className="text-slate-400 text-sm mb-4">
-                Adaugă primul tău teren pentru a începe monitorizarea
+                {assignTo
+                  ? "Adaugă un teren pentru această persoană asigurată"
+                  : "Adaugă primul tău teren pentru a începe monitorizarea"}
               </p>
             </div>
           ) : (
@@ -245,21 +296,18 @@ export default function TerenuriPage() {
                   property={property}
                   onRenew={() => handleRenew(property)}
                   onDelete={() => handleDeleteClick(property)}
+                  ownerName={
+                    !assignTo && property.assigned_user_id
+                      ? ownerMap[property.assigned_user_id] || undefined
+                      : undefined
+                  }
                 />
               ))}
             </div>
           )}
         </div>
       )}
-      {showRenewModal && renewProperty && (
-        <PricingModal
-          open={showRenewModal}
-          onClose={() => setShowRenewModal(false)}
-          areaHa={renewProperty.area_ha}
-          userEmail={user?.primaryEmail || ""}
-          onPaymentSuccess={handleRenewSuccess}
-        />
-      )}
+
       <DeleteConfirmationModal
         open={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
@@ -270,3 +318,4 @@ export default function TerenuriPage() {
     </div>
   );
 }
+

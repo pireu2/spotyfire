@@ -49,6 +49,7 @@ class PropertyCreate(BaseModel):
     center_lat: float = Field(..., description="Center latitude for map zoom")
     center_lng: float = Field(..., description="Center longitude for map zoom")
     estimated_value: Optional[float] = Field(default=None, description="Estimated property value in EUR")
+    assigned_user_id: Optional[str] = Field(default=None, description="Stack User ID of the insured individual")
 
 
 class PropertyUpdate(BaseModel):
@@ -69,6 +70,7 @@ class PropertyResponse(BaseModel):
     center_lng: float
     estimated_value: Optional[float]
     risk_score: Optional[float]
+    assigned_user_id: Optional[str]
     last_analysed_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
