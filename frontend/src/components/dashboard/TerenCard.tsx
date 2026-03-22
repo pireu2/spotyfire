@@ -2,10 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "../ui/badge";
-import { MapPin, Euro, SquareIcon, RefreshCw, Trash2 } from "lucide-react";
+import { MapPin, Euro, SquareIcon, RefreshCw, Trash2, User } from "lucide-react";
 
 const PACKAGE_REPORTS: Record<string, number> = {
-  Basic: 5,
+  Basic: 3,
   Pro: 15,
   Enterprise: 30,
 };
@@ -14,10 +14,12 @@ export default function TerenCard({
   property,
   onRenew,
   onDelete,
+  ownerName,
 }: {
   property: any;
   onRenew: () => void;
   onDelete: () => void;
+  ownerName?: string;
 }) {
   const {
     name,
@@ -36,6 +38,12 @@ export default function TerenCard({
         <div>
           <h3 className="font-semibold text-white">{name}</h3>
           <p className="text-sm text-slate-400">{crop_type}</p>
+          {ownerName && (
+            <div className="flex items-center gap-1.5 mt-1">
+              <User className="h-3 w-3 text-green-400" />
+              <span className="text-xs text-green-400 font-medium">{ownerName}</span>
+            </div>
+          )}
         </div>
         <Button
           variant="ghost"
@@ -63,10 +71,10 @@ export default function TerenCard({
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2 text-slate-400">
             <Euro className="h-4 w-4" />
-            <span>Valoare Estimată</span>
+            <span>Preț / lună</span>
           </div>
           <span className="text-white font-medium">
-            {estimated_value.toLocaleString()} €
+            {estimated_value > 0 ? `${estimated_value.toLocaleString()} €` : "Custom Quote"}
           </span>
         </div>
 
@@ -75,7 +83,7 @@ export default function TerenCard({
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs text-slate-500">Rapoarte rămase</span>
           <span className="text-xs font-bold text-green-400">
-            {reportsLeft} / {PACKAGE_REPORTS[activePackage] || 5}
+            {reportsLeft} / {PACKAGE_REPORTS[activePackage] || 3}
           </span>
         </div>
         {reportsLeft === 0 && (
@@ -96,3 +104,4 @@ export default function TerenCard({
     </div>
   );
 }
+

@@ -86,12 +86,6 @@ export default function Navbar() {
                 >
                   Despre Noi
                 </Link>
-                <Link
-                  href="/aboneaza-te"
-                  className="text-slate-300 hover:text-white transition-colors"
-                >
-                  Abonează-te
-                </Link>
               </div>
             </div>
 
@@ -204,13 +198,6 @@ export default function Navbar() {
               className="text-slate-300 hover:text-white font-medium flex items-center gap-3"
             >
               Despre Noi
-            </Link>
-            <Link
-              href="/aboneaza-te"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-slate-300 hover:text-white font-medium flex items-center gap-3"
-            >
-              Abonează-te
             </Link>
           </div>
 

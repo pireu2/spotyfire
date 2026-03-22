@@ -48,6 +48,8 @@ class Property(Base):
     estimated_value = Column(Float, nullable=True)
     risk_score = Column(Float, nullable=True, default=0.0)
     
+    assigned_user_id = Column(String(255), nullable=True, index=True)
+    
     last_analysed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -147,3 +149,16 @@ class Alert(Base):
     
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class InsuredUser(Base):
+    __tablename__ = "insured_users"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    company_id = Column(String(255), nullable=False)
+    stack_user_id = Column(String(255), unique=True, nullable=False)
+    name = Column(String(255), nullable=False)
+    email = Column(String(255), unique=True, nullable=False)
+    paid_price = Column(Float, default=0.0)
+    is_paid = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)

@@ -31,6 +31,7 @@ export interface Property {
   updated_at: string;
   activePackage: PackageType;
   reportsLeft: number;
+  assigned_user_id?: string;
 }
 
 export interface CreatePropertyRequest {
@@ -46,6 +47,7 @@ export interface CreatePropertyRequest {
   estimated_value: number;
   activePackage: PackageType;
   reportsLeft: number;
+  assigned_user_id?: string;
 }
 
 export interface UpdatePropertyRequest {

@@ -1,7 +1,7 @@
 "use client";
 
 import { SignUp, SignIn } from "@stackframe/stack";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Building2, UserRound } from "lucide-react";
 
 type AuthMode = "company" | "individual";
@@ -13,7 +13,11 @@ interface AuthModalProps {
 
 export default function AuthModal({ mode, onClose }: AuthModalProps) {
   const [authMode, setAuthMode] = useState<AuthMode>("company");
-  const [policyCode, setPolicyCode] = useState("");
+
+  useEffect(() => {
+    localStorage.setItem("spotyfire_auth_mode", authMode);
+    sessionStorage.setItem("spotyfire_auth_mode_backup", authMode);
+  }, [authMode]);
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -96,26 +100,7 @@ export default function AuthModal({ mode, onClose }: AuthModalProps) {
           </div>
         </div>
 
-        {/* Extra field for Individual mode */}
-        {authMode === "individual" && (
-          <div className="auth-policy-container stack-scope animate-in fade-in slide-in-from-top-2 duration-300">
-            <label
-              htmlFor="policy-code"
-              className="stack-scope block text-sm font-medium leading-none text-gray-400 dark:text-gray-400 mb-1.5"
-            >
-              Cod Poliță Asigurare
-            </label>
-            <div className="flex flex-row items-center backdrop-blur-md bg-black/20 flex-1">
-              <input
-                id="policy-code"
-                type="text"
-                value={policyCode}
-                onChange={(e) => setPolicyCode(e.target.value)}
-                className="stack-scope flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm text-white placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-          </div>
-        )}
+
 
         {mode === "signup" && (
           <SignUp

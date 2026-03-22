@@ -75,6 +75,7 @@ async def analyze_property_damage(
 ):
     from app.services.gee_service import analyze_property_gee_comparison
     from app.services.ai_agent import generate_report_insights
+    from sqlalchemy import func, extract
     
     result = await db.execute(
         select(Property).where(Property.id == property_id, Property.user_id == user_id)
@@ -83,6 +84,24 @@ async def analyze_property_damage(
     
     if not property_obj:
         raise HTTPException(status_code=404, detail="Property not found")
+    
+    # Check monthly report limit (max 3 per property per month)
+    now = datetime.utcnow()
+    count_result = await db.execute(
+        select(func.count(SatelliteAnalysis.id)).where(
+            SatelliteAnalysis.property_id == property_id,
+            extract('year', SatelliteAnalysis.created_at) == now.year,
+            extract('month', SatelliteAnalysis.created_at) == now.month,
+        )
+    )
+    monthly_count = count_result.scalar() or 0
+    
+    MAX_REPORTS_PER_MONTH = 3
+    if monthly_count >= MAX_REPORTS_PER_MONTH:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Limita de {MAX_REPORTS_PER_MONTH} rapoarte pe lună a fost atinsă pentru acest teren. Trebuie să reînnoiești polița pentru a genera mai multe rapoarte."
+        )
     
     result = await db.execute(
         select(Geometry).where(Geometry.id == property_obj.geometry_id)

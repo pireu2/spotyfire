@@ -8,7 +8,24 @@ import {
   Marker,
   useMapEvents,
   Tooltip,
+  useMap,
 } from "react-leaflet";
+
+function MapContent({ children }: { children: React.ReactNode }) {
+  const map = useMap();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (map) {
+      const timer = setTimeout(() => setReady(true), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [map]);
+
+  if (!ready) return null;
+  return <>{children}</>;
+}
+
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -105,6 +122,15 @@ export default function PolygonDrawMap({
   initialPolygon,
   existingPolygons = [],
 }: PolygonDrawMapProps) {
+  const [isMounted, setIsMounted] = useState(false);
+  const [mapKey, setMapKey] = useState(0);
+
+  useEffect(() => {
+    setIsMounted(true);
+    setMapKey((prev) => prev + 1);
+    return () => setIsMounted(false);
+  }, []);
+
   const [coordinates, setCoordinates] = useState<
     { lat: number; lng: number }[]
   >(initialPolygon || []);
@@ -187,9 +213,21 @@ export default function PolygonDrawMap({
     [48.3, 30.0],
   ];
 
+  if (!isMounted) {
+    return (
+      <div className="h-full w-full bg-slate-900 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-green-500 border-t-transparent"></div>
+          <span className="text-sm text-slate-400">Se încarcă harta...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full w-full relative">
       <MapContainer
+        key={isMounted ? `polygon-draw-map-${mapKey}` : "offline"}
         center={[45.9432, 24.9668]}
         zoom={7}
         minZoom={7}
@@ -199,89 +237,92 @@ export default function PolygonDrawMap({
         className="h-full w-full"
         style={{ background: "#1e293b" }}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <MapContent>
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
 
-        <MapClickHandler
-          coordinates={coordinates}
-          setCoordinates={setCoordinates}
-          onPolygonChange={onPolygonChange}
-          setRedoStack={setRedoStack}
-        />
+          <MapClickHandler
+            coordinates={coordinates}
+            setCoordinates={setCoordinates}
+            onPolygonChange={onPolygonChange}
+            setRedoStack={setRedoStack}
+          />
 
-        {/* Existing Polygons Layer */}
-        {existingPolygons.map((polygonData, index) => {
-          // Flatten standard [lng, lat] arrays if needed, but assuming [lat, lng] for now
-          // Strict validation to prevent crashing Leaflet
-          const polygonCoords = polygonData.coordinates;
-          const isValid =
-            Array.isArray(polygonCoords) &&
-            polygonCoords.length > 0 &&
-            Array.isArray(polygonCoords[0]) &&
-            polygonCoords[0].length >= 3 && // Require at least 3 points to be a valid polygon
-            // Check deep validity of first point (Arrays or Objects)
-            ((Array.isArray(polygonCoords[0][0]) &&
-              (typeof polygonCoords[0][0][0] === "number" ||
+          {/* Existing Polygons Layer */}
+          {existingPolygons.map((polygonData, index) => {
+            // Flatten standard [lng, lat] arrays if needed, but assuming [lat, lng] for now
+            // Strict validation to prevent crashing Leaflet
+            const polygonCoords = polygonData.coordinates;
+            const isValid =
+              Array.isArray(polygonCoords) &&
+              polygonCoords.length > 0 &&
+              Array.isArray(polygonCoords[0]) &&
+              polygonCoords[0].length >= 3 && // Require at least 3 points to be a valid polygon
+              // Check deep validity of first point (Arrays or Objects)
+              ((Array.isArray(polygonCoords[0][0]) &&
+                (typeof polygonCoords[0][0][0] === "number" ||
+                  ("lat" in (polygonCoords[0][0] as any) &&
+                    "lng" in (polygonCoords[0][0] as any)))) ||
+                typeof polygonCoords[0][0] === "number" ||
                 ("lat" in (polygonCoords[0][0] as any) &&
-                  "lng" in (polygonCoords[0][0] as any)))) ||
-              typeof polygonCoords[0][0] === "number" ||
-              ("lat" in (polygonCoords[0][0] as any) &&
-                "lng" in (polygonCoords[0][0] as any)));
+                  "lng" in (polygonCoords[0][0] as any)));
 
-          if (!isValid) return null;
+            if (!isValid) return null;
 
-          return (
-            <Polygon
-              key={`existing-${index}`}
-              positions={polygonCoords as any}
-              pathOptions={{
-                color: "#059669", // Green (matches "Sănătos" status)
-                fillColor: "#059669",
-                fillOpacity: 0.4,
-                weight: 3,
-                interactive: true, // Make sure it's interactive for tooltip
-              }}
-            >
-              <Tooltip
-                sticky
-                direction="top"
-                offset={[0, -10]}
-                opacity={1}
-                className="custom-map-tooltip"
+            return (
+              <Polygon
+                key={`existing-polygon-${index}`}
+                positions={polygonCoords as any}
+                pathOptions={{
+                  color: "#059669", // Green (matches "Sănătos" status)
+                  fillColor: "#059669",
+                  fillOpacity: 0.4,
+                  weight: 3,
+                  interactive: true, // Make sure it's interactive for tooltip
+                }}
               >
-                {polygonData.name}
-              </Tooltip>
-            </Polygon>
-          );
-        })}
+                <Tooltip
+                  sticky
+                  direction="top"
+                  offset={[0, -10]}
+                  opacity={1}
+                  className="custom-map-tooltip"
+                >
+                  {polygonData.name}
+                </Tooltip>
+              </Polygon>
+            );
+          })}
 
-        {coordinates.length >= 3 && (
-          <Polygon
-            positions={coordinates.map(
-              (c) => [c.lat, c.lng] as [number, number]
-            )}
-            pathOptions={{
-              color: "#10b981",
-              fillColor: "#10b981",
-              fillOpacity: 0.3,
-              weight: 2,
-            }}
-          />
-        )}
+          {coordinates.length >= 3 && (
+            <Polygon
+              positions={coordinates.map(
+                (c) => [c.lat, c.lng] as [number, number]
+              )}
+              pathOptions={{
+                color: "#10b981",
+                fillColor: "#10b981",
+                fillOpacity: 0.3,
+                weight: 2,
+              }}
+            />
+          )}
 
-        {coordinates.map((coord, index) => (
-          <Marker
-            key={index}
-            position={[coord.lat, coord.lng]}
-            icon={markerIcon}
-            eventHandlers={{
-              click: () => handleMarkerClick(index),
-            }}
-          />
-        ))}
+          {coordinates.map((coord, index) => (
+            <Marker
+              key={`marker-${index}`}
+              position={[coord.lat, coord.lng]}
+              icon={markerIcon}
+              eventHandlers={{
+                click: () => handleMarkerClick(index),
+              }}
+            />
+          ))}
+        </MapContent>
       </MapContainer>
+
 
       {coordinates.length > 0 && coordinates.length < 3 && (
         <div className="absolute bottom-4 left-4 z-[1000] bg-orange-500/20 backdrop-blur px-3 py-2 rounded-lg border border-orange-500/50 pointer-events-none">

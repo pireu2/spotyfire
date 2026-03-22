@@ -1,13 +1,31 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState, useEffect, useRef } from "react";
 import {
   MapContainer,
   TileLayer,
   Polygon,
   Popup,
   CircleMarker,
+  useMap,
 } from "react-leaflet";
+
+function MapContent({ children }: { children: React.ReactNode }) {
+  const map = useMap();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (map) {
+      // Ensure the map is truly ready
+      const timer = setTimeout(() => setReady(true), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [map]);
+
+  if (!ready) return null;
+  return <>{children}</>;
+}
+
 import "leaflet/dist/leaflet.css";
 import { LandParcel, Alert } from "@/types";
 
@@ -52,6 +70,26 @@ function MapCanvas({
   activeLayer = "standard",
   onParcelSelect,
 }: MapCanvasProps) {
+  const [isMounted, setIsMounted] = useState(false);
+  const [mapKey, setMapKey] = useState(0);
+
+  useEffect(() => {
+    setIsMounted(true);
+    setMapKey((prev) => prev + 1);
+    return () => setIsMounted(false);
+  }, []);
+
+  if (!isMounted) {
+    return (
+      <div className="h-full w-full bg-slate-900 flex items-center justify-center rounded-lg border border-slate-700">
+        <div className="flex flex-col items-center gap-2">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-green-500 border-t-transparent"></div>
+          <span className="text-sm text-slate-400">Se încarcă harta...</span>
+        </div>
+      </div>
+    );
+  }
+
   const romaniaBounds: [[number, number], [number, number]] = [
     [43.5, 20.2],
     [48.3, 30.0],
@@ -213,6 +251,7 @@ function MapCanvas({
 
   return (
     <MapContainer
+      key={isMounted ? `main-map-canvas-${mapKey}` : "offline"}
       center={[45.9432, 24.9668]}
       zoom={7}
       minZoom={7}
@@ -222,117 +261,119 @@ function MapCanvas({
       className="h-full w-full rounded-lg"
       style={{ height: "100%", width: "100%" }}
     >
-      <TileLayer
-        key={activeLayer} // Force re-render on layer change
-        attribution={tileConfig.attribution}
-        url={tileConfig.url}
-      />
-      {parcels.map((parcel) => {
-        const colors = getParcelColor(parcel.status);
-        return (
-          <Polygon
-            key={parcel.id}
-            positions={parcel.coordinates}
-            pathOptions={{
-              ...colors,
-              fillOpacity: 0.4,
-              weight: 3,
-            }}
-            eventHandlers={{
-              click: () => {
-                if (onParcelSelect) {
-                  onParcelSelect(parcel);
-                }
-              },
-            }}
-          >
-            <Popup>
-              <div className="p-2 min-w-[200px]">
-                <h3 className="font-bold text-lg mb-2">{parcel.name}</h3>
-                <div className="space-y-1 text-sm">
-                  <p>
-                    <span className="font-medium">Stare:</span>{" "}
-                    <span
-                      className={
-                        parcel.status === "fire"
-                          ? "text-orange-600"
-                          : parcel.status === "flood"
-                          ? "text-blue-600"
-                          : "text-green-600"
-                      }
-                    >
-                      {getStatusText(parcel.status)}
-                    </span>
-                  </p>
-                  <p>
-                    <span className="font-medium">Index Vegetație (NDVI):</span>{" "}
-                    {parcel.ndviIndex.toFixed(2)} (
-                    {getNDVILabel(parcel.ndviIndex)})
-                  </p>
-                  <p>
-                    <span className="font-medium">Suprafață:</span>{" "}
-                    {parcel.area} ha
-                  </p>
-                  {parcel.damageEstimate && (
-                    <p className="text-red-600 font-medium">
-                      Estimare Daune:{" "}
-                      {parcel.damageEstimate.toLocaleString("ro-RO")} RON
+      <MapContent>
+        <TileLayer
+          attribution={tileConfig.attribution}
+          url={tileConfig.url}
+        />
+        {parcels.map((parcel) => {
+          const colors = getParcelColor(parcel.status);
+          return (
+            <Polygon
+              key={`parcel-${parcel.id}`}
+              positions={parcel.coordinates}
+              pathOptions={{
+                ...colors,
+                fillOpacity: 0.4,
+                weight: 3,
+              }}
+              eventHandlers={{
+                click: () => {
+                  if (onParcelSelect) {
+                    onParcelSelect(parcel);
+                  }
+                },
+              }}
+            >
+              <Popup key={`parcel-popup-${parcel.id}`}>
+                <div className="p-2 min-w-[200px]">
+                  <h3 className="font-bold text-lg mb-2">{parcel.name}</h3>
+                  <div className="space-y-1 text-sm">
+                    <p>
+                      <span className="font-medium">Stare:</span>{" "}
+                      <span
+                        className={
+                          parcel.status === "fire"
+                            ? "text-orange-600"
+                            : parcel.status === "flood"
+                            ? "text-blue-600"
+                            : "text-green-600"
+                        }
+                      >
+                        {getStatusText(parcel.status)}
+                      </span>
                     </p>
-                  )}
+                    <p>
+                      <span className="font-medium">Index Vegetație (NDVI):</span>{" "}
+                      {parcel.ndviIndex.toFixed(2)} (
+                      {getNDVILabel(parcel.ndviIndex)})
+                    </p>
+                    <p>
+                      <span className="font-medium">Suprafață:</span>{" "}
+                      {parcel.area} ha
+                    </p>
+                    {parcel.damageEstimate && (
+                      <p className="text-red-600 font-medium">
+                        Estimare Daune:{" "}
+                        {parcel.damageEstimate.toLocaleString("ro-RO")} RON
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </Popup>
-          </Polygon>
-        );
-      })}
+              </Popup>
+            </Polygon>
+          );
+        })}
 
-      {alerts.map((alert) => {
-        const coords =
-          alert.lat && alert.lng
-            ? [alert.lat, alert.lng]
-            : sectorCoordinates[alert.sector];
-        if (!coords) return null;
+        {alerts.map((alert) => {
+          const coords =
+            alert.lat && alert.lng
+              ? [alert.lat, alert.lng]
+              : sectorCoordinates[alert.sector];
+          if (!coords) return null;
 
-        return (
-          <CircleMarker
-            key={alert.id}
-            center={coords as [number, number]}
-            pathOptions={{
-              color: getAlertColor(alert.type),
-              fillColor: getAlertColor(alert.type),
-              fillOpacity: 0.7,
-              weight: 2,
-            }}
-            radius={8}
-          >
-            <Popup>
-              <div className="p-2">
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className={`w-2 h-2 rounded-full`}
-                    style={{ backgroundColor: getAlertColor(alert.type) }}
-                  ></span>
-                  <span className="font-bold capitalize">
-                    {alert.type.toLowerCase() === "ndvi"
-                      ? "Alertă NDVI"
-                      : `Alertă ${alert.type.toLowerCase()}`}
-                  </span>
+          return (
+            <CircleMarker
+              key={`alert-${alert.id}`}
+              center={coords as [number, number]}
+              pathOptions={{
+                color: getAlertColor(alert.type),
+                fillColor: getAlertColor(alert.type),
+                fillOpacity: 0.7,
+                weight: 2,
+              }}
+              radius={8}
+            >
+              <Popup key={`alert-popup-${alert.id}`}>
+                <div className="p-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className={`w-2 h-2 rounded-full`}
+                      style={{ backgroundColor: getAlertColor(alert.type) }}
+                    ></span>
+                    <span className="font-bold capitalize">
+                      {alert.type.toLowerCase() === "ndvi"
+                        ? "Alertă NDVI"
+                        : `Alertă ${alert.type.toLowerCase()}`}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium">{alert.message}</p>
+                  <div className="text-xs text-slate-500 mt-2 flex justify-between">
+                    <span>{alert.sector}</span>
+                    <span>
+                      {alert.created_at
+                        ? new Date(alert.created_at).toLocaleDateString("ro-RO")
+                        : new Date(alert.timestamp).toLocaleDateString("ro-RO")}
+                    </span>
+                  </div>
                 </div>
-                <p className="text-sm font-medium">{alert.message}</p>
-                <div className="text-xs text-slate-500 mt-2 flex justify-between">
-                  <span>{alert.sector}</span>
-                  <span>
-                    {alert.created_at
-                      ? new Date(alert.created_at).toLocaleDateString("ro-RO")
-                      : new Date(alert.timestamp).toLocaleDateString("ro-RO")}
-                  </span>
-                </div>
-              </div>
-            </Popup>
-          </CircleMarker>
-        );
-      })}
+              </Popup>
+            </CircleMarker>
+          );
+        })}
+      </MapContent>
     </MapContainer>
+
   );
 }
 
