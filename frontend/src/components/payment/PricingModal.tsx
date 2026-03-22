@@ -15,8 +15,8 @@ const PACKAGES = [
   {
     name: "Basic",
     price: 29,
-    reports: 5,
-    features: ["monitorizare pentru până la 20 ha", "5 rapoarte/lună", "overview teren", "alerte"],
+    reports: 3,
+    features: ["monitorizare pentru până la 20 ha", "3 rapoarte/lună", "overview teren", "alerte"],
   },
   {
     name: "Pro",

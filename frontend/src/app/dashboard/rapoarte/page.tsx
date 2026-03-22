@@ -11,6 +11,7 @@ import {
   Loader2,
   MapPin,
   CheckCircle,
+  User,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import dynamic from "next/dynamic";
@@ -36,6 +37,7 @@ interface Property {
   id: string;
   name: string;
   crop_type: string;
+  assigned_user_id?: string;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -57,10 +59,42 @@ export default function ReportsPage() {
   const [reportProgress, setReportProgress] = useState(0);
   const [reportSuccess, setReportSuccess] = useState(false);
   const [incidentDate, setIncidentDate] = useState<string>("");
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [ownerMap, setOwnerMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadPropertiesAndAnalyses();
+    fetchUserRole();
+    fetchOwnerMap();
   }, [user]);
+
+  const fetchUserRole = async () => {
+    try {
+      const meta = (user as any)?.clientMetadata;
+      if (meta?.role) {
+        setUserRole(meta.role);
+      }
+    } catch (e) {
+      console.error("Failed to get role:", e);
+    }
+  };
+
+  const fetchOwnerMap = async () => {
+    try {
+      const res = await fetch("/api/auth/insured-users");
+      if (res.ok) {
+        const data = await res.json();
+        const map: Record<string, string> = {};
+        for (const u of data) {
+          map[u.stack_user_id] = u.name || u.email;
+        }
+        setOwnerMap(map);
+      }
+    } catch (e) {
+      console.error("Failed to fetch owner map:", e);
+    }
+  };
 
   const loadPropertiesAndAnalyses = async () => {
     try {
@@ -112,6 +146,7 @@ export default function ReportsPage() {
     setGeneratingReport(true);
     setReportProgress(0);
     setReportSuccess(false);
+    setReportError(null);
 
     try {
       const token = await user?.getAuthJson();
@@ -140,7 +175,17 @@ export default function ReportsPage() {
 
       setReportProgress(70);
 
-      if (!response.ok) throw new Error("Failed to generate analysis");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        if (response.status === 429) {
+          setReportError(errorData?.detail || "Limita de 3 rapoarte pe lună a fost atinsă. Trebuie să reînnoiești polița.");
+        } else {
+          setReportError(errorData?.detail || "A apărut o eroare la generarea raportului.");
+        }
+        setReportProgress(0);
+        setGeneratingReport(false);
+        return;
+      }
 
       setReportProgress(90);
       await loadPropertiesAndAnalyses();
@@ -153,8 +198,9 @@ export default function ReportsPage() {
         setReportSuccess(false);
         setReportProgress(0);
       }, 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating report:", error);
+      setReportError("A apărut o eroare la generarea raportului. Încearcă din nou.");
       setReportProgress(0);
     } finally {
       setGeneratingReport(false);
@@ -230,6 +276,8 @@ export default function ReportsPage() {
     0
   );
 
+  const isCompany = userRole === "company";
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -238,7 +286,9 @@ export default function ReportsPage() {
             Rapoarte Analiză Satelit
           </h1>
           <p className="text-slate-400 text-sm">
-            Analizează deteriorarea terenurilor pe baza unei date de incident
+            {isCompany
+              ? "Vizualizează rapoartele de analiză ale persoanelor asigurate"
+              : "Analizează deteriorarea terenurilor pe baza unei date de incident"}
           </p>
         </div>
 
@@ -250,7 +300,8 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {properties.length > 0 && (
+      {/* Generate Report Form - only for individuals, NOT for companies */}
+      {!isCompany && properties.length > 0 && (
         <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader>
             <CardTitle className="text-lg text-white">
@@ -362,6 +413,13 @@ export default function ReportsPage() {
                   </span>
                 </div>
               )}
+
+              {reportError && (
+                <div className="flex items-center gap-2 text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
+                  <AlertCircle className="h-5 w-5 shrink-0" />
+                  <span className="font-medium">{reportError}</span>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -386,6 +444,10 @@ export default function ReportsPage() {
             const propertyAnalyses = analyses[property.id] || [];
             if (propertyAnalyses.length === 0) return null;
 
+            const ownerName = property.assigned_user_id
+              ? ownerMap[property.assigned_user_id]
+              : null;
+
             return (
               <Card
                 key={property.id}
@@ -398,6 +460,12 @@ export default function ReportsPage() {
                     <span className="text-sm text-slate-400 font-normal ml-2">
                       ({property.crop_type || "Necunoscut"})
                     </span>
+                    {ownerName && (
+                      <span className="flex items-center gap-1 text-sm font-normal ml-auto bg-green-900/30 text-green-400 border border-green-800/50 rounded-full px-3 py-0.5">
+                        <User className="h-3.5 w-3.5" />
+                        {ownerName}
+                      </span>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -511,3 +579,4 @@ export default function ReportsPage() {
     </div>
   );
 }
+

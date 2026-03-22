@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ComponentType, useMemo } from "react";
+import { useState, ComponentType, useMemo, useEffect } from "react";
 import {
   X,
   Loader2,
@@ -14,9 +14,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { CreatePropertyRequest, PackageType, Property } from "@/types";
 import { createProperty, API_URL } from "@/lib/api";
+import { getIndividualUsers } from "@/app/actions/user";
 import { useUser } from "@stackframe/stack";
 import dynamic from "next/dynamic";
-import PricingModal from "@/components/payment/PricingModal";
+
 
 interface PolygonDrawMapProps {
   onPolygonChange: (
@@ -55,19 +56,20 @@ interface AddTerrainPanelProps {
   onClose: () => void;
   onSuccess: () => void;
   existingProperties?: Property[];
+  assignedUserId?: string;
 }
 
 const CROP_TYPES = [
-  { value: "grau", label: "Grâu - 48€/ha" },
-  { value: "porumb", label: "Porumb - 6.5€/ha" },
-  { value: "floarea_soarelui", label: "Floarea Soarelui - 90€/ha" },
-  { value: "rapita", label: "Rapiță - 140€/ha" },
-  { value: "orz", label: "Orz - 90€/ha" },
-  { value: "soia", label: "Soia - 150€/ha" },
-  { value: "vie", label: "Vie - 120€/ha" },
-  { value: "livada", label: "Livadă - 100€/ha" },
-  { value: "legume", label: "Legume - 150€/ha" },
-  { value: "altele", label: "Altele - 100€/ha" },
+  { value: "grau", label: "Grâu (48 €)" },
+  { value: "porumb", label: "Porumb (6.5 €)" },
+  { value: "floarea_soarelui", label: "Floarea Soarelui (90 €)" },
+  { value: "rapita", label: "Rapiță (140 €)" },
+  { value: "orz", label: "Orz (90 €)" },
+  { value: "soia", label: "Soia (150 €)" },
+  { value: "vie", label: "Vie (120 €)" },
+  { value: "livada", label: "Livadă (100 €)" },
+  { value: "legume", label: "Legume (150 €)" },
+  { value: "altele", label: "Altele (100 €)" },
 ];
 
 const CROP_PRICES: Record<string, number> = {
@@ -81,6 +83,21 @@ const CROP_PRICES: Record<string, number> = {
   livada: 100,
   legume: 150,
   altele: 100,
+};
+
+const getSurfaceTax = (area: number): number | "custom" => {
+  if (area < 7) return 10;
+  if (area <= 12) return 18;
+  if (area <= 20) return 24;
+  if (area <= 35) return 34;
+  if (area <= 60) return 48;
+  if (area <= 100) return 69;
+  if (area <= 150) return 92;
+  if (area <= 250) return 124;
+  if (area <= 400) return 169;
+  if (area <= 700) return 239;
+  if (area <= 1000) return 329;
+  return "custom";
 };
 
 const LOADING_MESSAGES = [
@@ -98,11 +115,24 @@ export default function AddTerrainPanel({
   onClose,
   onSuccess,
   existingProperties = [],
+  assignedUserId: assignedUserIdProp,
 }: AddTerrainPanelProps) {
   const user = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inputMode, setInputMode] = useState<InputMode>("cadastral");
+  
+  const [insuredUsers, setInsuredUsers] = useState<any[]>([]);
+  const [assignedUserId, setAssignedUserId] = useState<string>(assignedUserIdProp || "");
+
+  useEffect(() => {
+    getIndividualUsers().then(users => {
+      setInsuredUsers(users);
+      if (users.length > 0) {
+        setAssignedUserId(users[0].stack_user_id);
+      }
+    }).catch(console.error);
+  }, []);
 
   const [numarCadastral, setNumarCadastral] = useState("");
   const [cadastralData, setCadastralData] = useState<CadastralData | null>(
@@ -122,12 +152,11 @@ export default function AddTerrainPanel({
     null,
   );
 
-  const pricePerHa = CROP_PRICES[cropType] || 1000;
-  const estimatedValue = area * pricePerHa;
+  const surfaceTax = getSurfaceTax(area);
+  const cropFactor = CROP_PRICES[cropType] || 1;
+  const estimatedValue = surfaceTax === "custom" ? 0 : surfaceTax * cropFactor;
 
-  const [showPricingModal, setShowPricingModal] = useState(false);
-  const [pendingRequestData, setPendingRequestData] =
-    useState<CreatePropertyRequest | null>(null);
+
 
   const existingPolygonsFormatted = useMemo(() => {
     return existingProperties.map((p) => {
@@ -156,60 +185,7 @@ export default function AddTerrainPanel({
     });
   }, [existingProperties]);
 
-  const handlePaymentSuccess = async (pkg: string, reports: number) => {
-    if (!pendingRequestData) return;
 
-    if (
-      pkg !== "Basic" &&
-      pkg !== "Pro" &&
-      pkg !== "Enterprise" &&
-      pkg !== "Per Raport"
-    ) {
-      setError("Pachet invalid selectat");
-      return;
-    }
-
-    const updatedRequestData = {
-      ...pendingRequestData,
-      activePackage: pkg as PackageType,
-      reportsLeft: reports,
-    };
-
-    try {
-      setIsLoading(true);
-      const accessToken = await user
-        ?.getAuthJson()
-        .then((auth) => auth?.accessToken);
-      const createdProperty = await createProperty(
-        updatedRequestData,
-        accessToken || undefined,
-      );
-
-      // Save subscription info to localStorage since backend may not persist it
-      if (createdProperty?.id) {
-        const subscriptionData = JSON.parse(
-          localStorage.getItem("propertySubscriptions") || "{}",
-        );
-        subscriptionData[createdProperty.id] = {
-          activePackage: pkg,
-          reportsLeft: reports,
-        };
-        localStorage.setItem(
-          "propertySubscriptions",
-          JSON.stringify(subscriptionData),
-        );
-      }
-
-      onSuccess();
-      setShowPricingModal(false);
-      setPendingRequestData(null);
-    } catch (err) {
-      console.error("Failed to create property:", err);
-      setError("A apărut o eroare la crearea terenului. Încearcă din nou.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handlePolygonChange = (
     coords: { lat: number; lng: number }[],
@@ -342,6 +318,7 @@ export default function AddTerrainPanel({
         estimated_value: estimatedValue,
         activePackage: "Per Raport",
         reportsLeft: 0,
+        assigned_user_id: assignedUserId || undefined,
       };
     } else {
       const closedCoords = [...coordinates];
@@ -365,11 +342,45 @@ export default function AddTerrainPanel({
         estimated_value: estimatedValue,
         activePackage: "Per Raport",
         reportsLeft: 0,
+        assigned_user_id: assignedUserId || undefined,
       };
     }
 
-    setPendingRequestData(requestData);
-    setShowPricingModal(true);
+    // Directly create the property with Basic package, 3 reports
+    const directData = {
+      ...requestData,
+      activePackage: "Basic" as PackageType,
+      reportsLeft: 3,
+    };
+    try {
+      setIsLoading(true);
+      const accessToken = await user
+        ?.getAuthJson()
+        .then((auth) => auth?.accessToken);
+      const createdProperty = await createProperty(
+        directData,
+        accessToken || undefined,
+      );
+      if (createdProperty?.id) {
+        const subscriptionData = JSON.parse(
+          localStorage.getItem("propertySubscriptions") || "{}",
+        );
+        subscriptionData[createdProperty.id] = {
+          activePackage: "Basic",
+          reportsLeft: 3,
+        };
+        localStorage.setItem(
+          "propertySubscriptions",
+          JSON.stringify(subscriptionData),
+        );
+      }
+      onSuccess();
+    } catch (err) {
+      console.error("Failed to create property:", err);
+      setError("A apărut o eroare la crearea terenului. Încearcă din nou.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -536,6 +547,26 @@ export default function AddTerrainPanel({
             />
           </div>
 
+          {insuredUsers.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">
+                Alocă Asiguratului
+              </label>
+              <select
+                value={assignedUserId}
+                onChange={(e) => setAssignedUserId(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="">Nu aloca (Teren Companie)</option>
+                {insuredUsers.map((user) => (
+                  <option key={user.stack_user_id} value={user.stack_user_id}>
+                    {user.name} ({user.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1">
               Tip Cultură *
@@ -578,15 +609,17 @@ export default function AddTerrainPanel({
             <div className="flex items-center gap-2 mb-2">
               <Euro className="h-4 w-4 text-green-500" />
               <span className="text-sm font-medium text-green-400">
-                Cost Estimativ
+                Preț / lună
               </span>
             </div>
             <p className="text-2xl font-bold text-white">
-              {estimatedValue.toLocaleString()} €
+              {surfaceTax === "custom" ? "Custom Quote" : `${estimatedValue.toLocaleString()} €`}
             </p>
-            <p className="text-xs text-slate-400 mt-1">
-              Calcul: {pricePerHa}€ x {area.toFixed(2)} ha
-            </p>
+            {surfaceTax !== "custom" && (
+              <p className="text-xs text-slate-400 mt-1">
+                Calcul: {cropFactor} (cultură) x {surfaceTax}€ (suprafață {area.toFixed(2)} ha)
+              </p>
+            )}
           </div>
 
           {inputMode === "draw" && (
@@ -655,13 +688,7 @@ export default function AddTerrainPanel({
           </div>
         )}
       </div>
-      <PricingModal
-        open={showPricingModal}
-        onClose={() => setShowPricingModal(false)}
-        areaHa={pendingRequestData?.area_ha || 0}
-        userEmail={user?.primaryEmail || ""}
-        onPaymentSuccess={handlePaymentSuccess}
-      />
+
     </div>
   );
 }
