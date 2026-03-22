@@ -2,11 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
 from starlette.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from pydantic import BaseModel, Field
+from sqlalchemy import select, or_
+from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from uuid import UUID
+import os
 
 from app.database import get_db
 from app.db_models import Property, Geometry, SatelliteAnalysis
@@ -17,6 +18,7 @@ from app.services.wildfire_inference import (
     run_fire_segmentation_analysis,
 )
 from app.services.pdf_generator import generate_satellite_report_pdf
+from app.data.mocks import DEMO_MODE
 
 router = APIRouter()
 
@@ -29,13 +31,20 @@ class AnalyzeRequest(BaseModel):
 class AnalyzeFireRequest(BaseModel):
     property_id: UUID
     incident_date: date
-    geometry: Dict[str, Any] = Field(..., description="GeoJSON Polygon/MultiPolygon or Feature")
 
 
 class AnalyzeFireResponse(BaseModel):
     damaged_area_ha: float
     damage_percent: float
     burn_scars_geojson: Dict[str, Any]
+
+
+def _convert_db_coordinates_to_geojson(coords: Any) -> Any:
+    if isinstance(coords, dict) and "lat" in coords and "lng" in coords:
+        return [coords["lng"], coords["lat"]]
+    if isinstance(coords, list):
+        return [_convert_db_coordinates_to_geojson(c) for c in coords]
+    return coords
 
 
 class AnalysisResponse(BaseModel):
@@ -70,10 +79,23 @@ async def analyze_fire_burn_scars(
     if not property_obj:
         raise HTTPException(status_code=404, detail="Property not found")
 
+    geometry_obj = property_obj.geometry
+    if not geometry_obj:
+        raise HTTPException(status_code=404, detail="Geometry not found")
+
+    geometry_geojson = {
+        "type": "Feature",
+        "geometry": {
+            "type": geometry_obj.type,
+            "coordinates": _convert_db_coordinates_to_geojson(geometry_obj.coordinates),
+        },
+        "properties": {},
+    }
+
     try:
         inference_result = await run_in_threadpool(
             run_fire_segmentation_analysis,
-            request.geometry,
+            geometry_geojson,
             request.incident_date.isoformat(),
         )
     except FireAnalysisError as exc:
@@ -122,12 +144,72 @@ async def analyze_property_damage(
     from sqlalchemy import func, extract
     
     result = await db.execute(
-        select(Property).where(Property.id == property_id, Property.user_id == user_id)
+        select(Property).where(
+            Property.id == property_id,
+            or_(
+                Property.user_id == user_id,
+                Property.assigned_user_id == user_id,
+            ),
+        )
     )
     property_obj = result.scalar_one_or_none()
     
     if not property_obj:
         raise HTTPException(status_code=404, detail="Property not found")
+
+    if DEMO_MODE:
+        incident_dt = datetime.strptime(request.incident_date, "%Y-%m-%d").date()
+        before_dt = incident_dt - timedelta(days=30)
+        after_dt = incident_dt + timedelta(days=7)
+
+        total_area = float(property_obj.area_ha or 100.0)
+        damage_percent = 27.5
+        damaged_area = round(total_area * damage_percent / 100.0, 4)
+        estimated_cost = round(damaged_area * float(request.cost_per_ha or 5000), 2)
+
+        new_analysis = SatelliteAnalysis(
+            property_id=property_id,
+            analysis_type="demo_mock_report",
+            date_range_start=before_dt,
+            date_range_end=after_dt,
+            damage_percent=damage_percent,
+            damaged_area_ha=damaged_area,
+            total_area_ha=total_area,
+            estimated_cost=estimated_cost,
+            ndvi_before=0.61,
+            ndvi_after=0.42,
+            burn_severity=0.37,
+            overlay_image_b64=None,
+            overlay_before_b64=None,
+            overlay_after_b64=None,
+            fire_points=None,
+        )
+
+        db.add(new_analysis)
+        await db.commit()
+        await db.refresh(new_analysis)
+
+        property_obj.last_analysed_at = datetime.utcnow()
+        await db.commit()
+
+        return AnalysisResponse(
+            analysis_id=str(new_analysis.id),
+            damage_percent=new_analysis.damage_percent,
+            damaged_area_ha=new_analysis.damaged_area_ha,
+            total_area_ha=new_analysis.total_area_ha,
+            estimated_cost=new_analysis.estimated_cost,
+            incident_date=request.incident_date,
+            before_date=before_dt.strftime("%Y-%m-%d"),
+            after_date=after_dt.strftime("%Y-%m-%d"),
+            ndvi_before=new_analysis.ndvi_before,
+            ndvi_after=new_analysis.ndvi_after,
+            burn_severity=new_analysis.burn_severity,
+            overlay_before_b64="",
+            overlay_after_b64="",
+            ai_insights="Acesta este un raport demo generat pe date mock pentru prezentare.",
+            fire_points=None,
+            created_at=new_analysis.created_at,
+        )
     
     # Check monthly report limit (max 3 per property per month)
     now = datetime.utcnow()
@@ -237,7 +319,13 @@ async def get_property(
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(
-        select(Property).where(Property.id == property_id, Property.user_id == user_id)
+        select(Property).where(
+            Property.id == property_id,
+            or_(
+                Property.user_id == user_id,
+                Property.assigned_user_id == user_id,
+            ),
+        )
     )
     property_obj = result.scalar_one_or_none()
     
@@ -270,7 +358,13 @@ async def get_property_analyses(
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(
-        select(Property).where(Property.id == property_id, Property.user_id == user_id)
+        select(Property).where(
+            Property.id == property_id,
+            or_(
+                Property.user_id == user_id,
+                Property.assigned_user_id == user_id,
+            ),
+        )
     )
     property_obj = result.scalar_one_or_none()
     
@@ -313,7 +407,13 @@ async def get_analysis_detail(
         raise HTTPException(status_code=404, detail="Analysis not found")
     
     result = await db.execute(
-        select(Property).where(Property.id == analysis.property_id, Property.user_id == user_id)
+        select(Property).where(
+            Property.id == analysis.property_id,
+            or_(
+                Property.user_id == user_id,
+                Property.assigned_user_id == user_id,
+            ),
+        )
     )
     property_obj = result.scalar_one_or_none()
     
@@ -352,7 +452,13 @@ async def get_analysis_overlay(
         raise HTTPException(status_code=404, detail="Analysis not found")
     
     result = await db.execute(
-        select(Property).where(Property.id == analysis.property_id, Property.user_id == user_id)
+        select(Property).where(
+            Property.id == analysis.property_id,
+            or_(
+                Property.user_id == user_id,
+                Property.assigned_user_id == user_id,
+            ),
+        )
     )
     property_obj = result.scalar_one_or_none()
     
@@ -376,6 +482,19 @@ async def generate_analysis_report(
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
 ):
+    if DEMO_MODE:
+        from fastapi.responses import FileResponse
+
+        demo_pdf_path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "..", "..", "raport.pdf")
+        )
+        if os.path.exists(demo_pdf_path):
+            return FileResponse(
+                path=demo_pdf_path,
+                media_type="application/pdf",
+                filename="raport_demo.pdf",
+            )
+
     from app.services.ai_agent import generate_report_insights
     
     result = await db.execute(
@@ -387,7 +506,13 @@ async def generate_analysis_report(
         raise HTTPException(status_code=404, detail="Analysis not found")
     
     result = await db.execute(
-        select(Property).where(Property.id == analysis.property_id, Property.user_id == user_id)
+        select(Property).where(
+            Property.id == analysis.property_id,
+            or_(
+                Property.user_id == user_id,
+                Property.assigned_user_id == user_id,
+            ),
+        )
     )
     property_obj = result.scalar_one_or_none()
     

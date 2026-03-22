@@ -169,15 +169,35 @@ def _read_raster_bytes(raster_bytes: bytes) -> Tuple[np.ndarray, Any]:
 def _pad_to_patch(image: np.ndarray) -> Tuple[np.ndarray, int, int]:
     channels, height, width = image.shape
 
-    if height > PATCH_SIZE or width > PATCH_SIZE:
-        raise FireAnalysisError(
-            "Property bbox exceeds 512x512 at 10m resolution. "
-            "Reduce area to approximately 5x5 km or less."
-        )
-
     padded = np.zeros((channels, PATCH_SIZE, PATCH_SIZE), dtype=np.float32)
     padded[:, :height, :width] = image
     return padded, height, width
+
+
+def _predict_mask_for_any_size(image: np.ndarray) -> np.ndarray:
+    channels, height, width = image.shape
+
+    if height <= PATCH_SIZE and width <= PATCH_SIZE:
+        padded_image, original_height, original_width = _pad_to_patch(image)
+        normalized = _normalize_sen2fire(padded_image)
+        predicted_mask = _run_inference(normalized)
+        return predicted_mask[:original_height, :original_width]
+
+    full_mask = np.zeros((height, width), dtype=np.uint8)
+
+    for row_start in range(0, height, PATCH_SIZE):
+        for col_start in range(0, width, PATCH_SIZE):
+            row_end = min(row_start + PATCH_SIZE, height)
+            col_end = min(col_start + PATCH_SIZE, width)
+
+            tile = image[:, row_start:row_end, col_start:col_end]
+            tile_padded, tile_h, tile_w = _pad_to_patch(tile)
+            tile_normalized = _normalize_sen2fire(tile_padded)
+            tile_mask = _run_inference(tile_normalized)
+
+            full_mask[row_start:row_end, col_start:col_end] = tile_mask[:tile_h, :tile_w]
+
+    return full_mask
 
 
 def _normalize_sen2fire(padded_image: np.ndarray) -> np.ndarray:
@@ -209,13 +229,48 @@ def _run_inference(normalized_image: np.ndarray) -> np.ndarray:
 
     if output.shape[1] == 1:
         logits = output[0, 0, :, :]
+        probabilities = 1.0 / (1.0 + np.exp(-logits))
     elif output.shape[-1] == 1:
         logits = output[0, :, :, 0]
+        probabilities = 1.0 / (1.0 + np.exp(-logits))
+    elif output.shape[1] == 2:
+        # Model exported with 2-class logits in NCHW; use fire class probability.
+        cls_logits = output[0, :, :, :]
+        cls_logits = cls_logits - np.max(cls_logits, axis=0, keepdims=True)
+        probs = np.exp(cls_logits)
+        probs = probs / np.clip(np.sum(probs, axis=0, keepdims=True), 1e-8, None)
+        probabilities = probs[1]
+    elif output.shape[-1] == 2:
+        # Model exported with 2-class logits in NHWC; use fire class probability.
+        cls_logits = output[0, :, :, :]
+        cls_logits = cls_logits - np.max(cls_logits, axis=-1, keepdims=True)
+        probs = np.exp(cls_logits)
+        probs = probs / np.clip(np.sum(probs, axis=-1, keepdims=True), 1e-8, None)
+        probabilities = probs[:, :, 1]
     else:
-        raise FireAnalysisError(f"Cannot infer binary logits from output shape: {output.shape}")
+        raise FireAnalysisError(f"Cannot infer binary probabilities from output shape: {output.shape}")
 
-    probabilities = 1.0 / (1.0 + np.exp(-logits))
-    return (probabilities > 0.5).astype(np.uint8)
+    threshold = float(os.getenv("SEN2FIRE_FIRE_THRESHOLD", "0.5"))
+    threshold = float(np.clip(threshold, 0.0, 1.0))
+
+    if os.getenv("SEN2FIRE_DEBUG_STATS", "0").strip().lower() in {"1", "true", "yes"}:
+        gt05 = int((probabilities > 0.5).sum())
+        gt03 = int((probabilities > 0.3).sum())
+        gt02 = int((probabilities > 0.2).sum())
+        print(
+            "[sen2fire] prob stats:",
+            {
+                "min": float(np.min(probabilities)),
+                "max": float(np.max(probabilities)),
+                "mean": float(np.mean(probabilities)),
+                "thr": threshold,
+                "count_gt_0.5": gt05,
+                "count_gt_0.3": gt03,
+                "count_gt_0.2": gt02,
+            },
+        )
+
+    return (probabilities > threshold).astype(np.uint8)
 
 
 def _vectorize_mask(mask: np.ndarray, transform: Any) -> Dict[str, Any]:
@@ -265,11 +320,9 @@ def run_fire_segmentation_analysis(
     raster_bytes = _download_composite_geotiff(composite, ee_geom)
     image, transform = _read_raster_bytes(raster_bytes)
 
-    padded_image, original_height, original_width = _pad_to_patch(image)
-    normalized = _normalize_sen2fire(padded_image)
+    cropped_mask = _predict_mask_for_any_size(image)
 
-    predicted_mask = _run_inference(normalized)
-    cropped_mask = predicted_mask[:original_height, :original_width]
+    original_height, original_width = cropped_mask.shape
 
     fire_pixel_count = int(cropped_mask.sum())
     total_pixel_count = int(original_height * original_width)
