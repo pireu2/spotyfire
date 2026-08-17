@@ -1,4 +1,4 @@
-# SpotyFire 🛰️🔥💧
+# SpotyFire 
 
 **Disaster Response & Resilience Platform**  
 48-Hour Hackathon Project
@@ -7,20 +7,20 @@
 ![Python](https://img.shields.io/badge/python-3.11-blue.svg)
 ![Next.js](https://img.shields.io/badge/next.js-16-black.svg)
 
-## 📖 Overview
+##  Overview
 
 SpotyFire is a comprehensive disaster response platform that leverages satellite imagery (Sentinel-1 SAR) to detect and assess agricultural damage from floods and fires. The system provides real-time analysis, AI-powered insights, and automated insurance claim report generation.
 
 ### Key Features
 
-- 🛰️ **Satellite Analysis**: Sentinel-1 SAR imagery processing via Google Earth Engine
-- 🤖 **AI Insights**: Groq-powered analysis (llama-3.3-70b) generating detailed Romanian reports
-- 📄 **PDF Reports**: Professional insurance claim documents with before/after overlays
-- 🗺️ **Interactive Maps**: Property management with real-time damage visualization
-- 🔔 **Alert System**: Proactive notifications for detected incidents
-- 🔐 **Neon Auth**: Secure authentication via Stack Auth integration
+-  **Satellite Analysis**: Sentinel-1 SAR imagery processing via Google Earth Engine
+-  **AI Insights**: Groq-powered analysis (llama-3.3-70b) generating detailed Romanian reports
+-  **PDF Reports**: Professional insurance claim documents with before/after overlays
+-  **Interactive Maps**: Property management with real-time damage visualization
+-  **Alert System**: Proactive notifications for detected incidents
+-  **Neon Auth**: Secure authentication via Stack Auth integration
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
 spotyfire/
@@ -49,7 +49,7 @@ spotyfire/
 - **UI**: shadcn/ui (Radix primitives)
 - **Auth**: Stack Auth SDK
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -165,7 +165,7 @@ def generate_satellite_report_pdf(...):
     # Page 5: Conclusions
 ```
 
-## 🗄️ Database Schema
+##  Database Schema
 
 ### Key Tables
 
@@ -236,7 +236,7 @@ property = relationship("Property", passive_deletes=True)
 # Prevents NULL violations on property deletion
 ```
 
-## 🌍 API Endpoints
+##  API Endpoints
 
 ### Satellite Analysis
 
@@ -271,7 +271,7 @@ PUT /api/properties/{id}
 DELETE /api/properties/{id}
 ```
 
-## 🎨 Frontend Pages
+##  Frontend Pages
 
 ### Dashboard (`/dashboard`)
 
@@ -297,7 +297,7 @@ DELETE /api/properties/{id}
 - Real-time incident notifications
 - Dismiss/activate toggles
 
-## 🔐 Authentication Flow
+##  Authentication Flow
 
 ```typescript
 // Frontend: src/stack/server.tsx
@@ -314,7 +314,7 @@ export const stackServerApp = new StackServerApp({
 const user = await stackServerApp.getUser({ or: "redirect" });
 ```
 
-## 📝 Environment Variables
+##  Environment Variables
 
 ### Backend (.env)
 
@@ -334,7 +334,7 @@ NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY=...
 STACK_SECRET_SERVER_KEY=...
 ```
 
-## 🐛 Known Issues & Solutions
+##  Known Issues & Solutions
 
 ### Issue: Romanian characters in PDF
 
@@ -352,7 +352,7 @@ STACK_SECRET_SERVER_KEY=...
 
 **Solution**: Custom `parse_markdown_to_pdf()` parser
 
-## 🚧 Future Enhancements
+##  Future Enhancements
 
 - [ ] Real-time satellite monitoring
 - [ ] Multi-language support (English, French)
@@ -363,15 +363,15 @@ STACK_SECRET_SERVER_KEY=...
 - [ ] Drone imagery support
 - [ ] Machine learning damage classification
 
-## 📄 License
+##  License
 
 MIT License - See LICENSE file for details
 
-## 👥 Team
+##  Team
 
-Built during the 48h "Disaster Responses & Resilience" Hackathon
+Built during the 48h Polihack Hackathon
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - Google Earth Engine for satellite data access
 - Neon for serverless PostgreSQL
@@ -379,7 +379,7 @@ Built during the 48h "Disaster Responses & Resilience" Hackathon
 - Stack Auth for authentication
 - Copernicus Programme (Sentinel-1)
 
-## 📧 Contact
+##  Contact
 
 For questions or support, please open an issue on GitHub.
 
